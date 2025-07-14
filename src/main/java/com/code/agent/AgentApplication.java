@@ -1,12 +1,11 @@
 package com.code.agent;
 
-import com.code.agent.config.AppProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 
-@EnableConfigurationProperties(AppProperties.class)
 @SpringBootApplication
+@ConfigurationPropertiesScan
 public class AgentApplication {
 
     public static void main(String[] args) {

@@ -1,19 +1,19 @@
 # src/main/resources/application.yml
 
 spring:
+  jackson:
+    property-naming-strategy: SNAKE_CASE
   ai:
     ollama:
-      # 기본적으로 localhost를 바라보도록 설정하고, 필요시 환경변수로 재정의
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
-        model: "llama3:8b-instruct-q8_0" # 모델 이름은 보통 공통으로 사용하므로 포함
+        model: "llama3:8b-instruct-q8_0"
         options:
           temperature: 0.2
     vector-store:
       chroma:
         client:
-          # 기본적으로 localhost를 바라보도록 설정하고, 필요시 환경변수로 재정의
           host: ${CHROMA_HOST:http://localhost}
           port: ${CHROMA_PORT:8000}
-        collection-name: ${CHROMA_COLLECTION_NAME:code-policy} # 컬렉션 이름은 공통이므로 포함
+        collection-name: ${CHROMA_COLLECTION_NAME}
         # initialize-schema: true
