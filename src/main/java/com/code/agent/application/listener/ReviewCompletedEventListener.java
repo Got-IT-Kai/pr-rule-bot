@@ -16,6 +16,6 @@ public class ReviewCompletedEventListener {
     @Async(ExecutorName.REVIEW_TASK_EXECUTOR)
     @EventListener
     public void handleReviewCompletedEvent(ReviewCompletedEvent event) {
-        gitHubPort.postReviewComment(event.reviewInfo(), event.reviewResult().comment());
+        gitHubPort.postReviewComment(event.reviewInfo(), event.reviewResult());
     }
 }

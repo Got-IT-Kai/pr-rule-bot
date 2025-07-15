@@ -4,7 +4,6 @@ import com.code.agent.application.event.ReviewCompletedEvent;
 import com.code.agent.application.event.ReviewRequestedEvent;
 import com.code.agent.application.port.out.AiPort;
 import com.code.agent.config.ExecutorName;
-import com.code.agent.domain.model.ReviewResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
@@ -20,7 +19,7 @@ public class ReviewRequestedEventListener {
     @Async(ExecutorName.AI_TASK_EXECUTOR)
     @EventListener
     public void handleReviewRequestedEvent(ReviewRequestedEvent event) {
-        ReviewResult reviewResult = aiPort.evaluateDiff(event.diff());
+        String reviewResult = aiPort.evaluateDiff(event.diff());
 
         applicationEventPublisher.publishEvent(new ReviewCompletedEvent(event.reviewInfo(), reviewResult));
     }
