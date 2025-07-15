@@ -17,3 +17,9 @@ spring:
           port: ${CHROMA_PORT:8000}
         collection-name: ${CHROMA_COLLECTION_NAME}
         # initialize-schema: true
+  profiles:
+    active: local
+
+github:
+  base-url: "https://api.github.com"
+  token: ${GITHUB_TOKEN}

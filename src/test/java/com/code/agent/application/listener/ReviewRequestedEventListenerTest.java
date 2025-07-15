@@ -4,7 +4,6 @@ import com.code.agent.application.event.ReviewCompletedEvent;
 import com.code.agent.application.event.ReviewRequestedEvent;
 import com.code.agent.application.port.out.AiPort;
 import com.code.agent.domain.model.PullRequestReviewInfo;
-import com.code.agent.domain.model.ReviewResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -27,12 +26,9 @@ class ReviewRequestedEventListenerTest {
     @MockitoBean
     private AiPort aiPort;
 
-    @Autowired
-    private ApplicationEvents applicationEvents;
-
     @Test
-    void checkEventPublishing() {
-        when(aiPort.evaluateDiff("mock diff")).thenReturn(new ReviewResult(true, "mock comment"));
+    void checkEventPublishing(ApplicationEvents applicationEvents) {
+        when(aiPort.evaluateDiff("mock diff")).thenReturn("mock comment");
         PullRequestReviewInfo reviewInfo = new PullRequestReviewInfo("owner", "name", 1, "diffUrl");
         ReviewRequestedEvent event = new ReviewRequestedEvent(reviewInfo, "mock diff");
 

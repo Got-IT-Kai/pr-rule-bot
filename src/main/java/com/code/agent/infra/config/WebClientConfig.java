@@ -11,8 +11,9 @@ public class WebClientConfig {
     @Bean
     WebClient gitHubWebClient(GitHubProperties gitHubProperties) {
         return WebClient.builder().baseUrl(gitHubProperties.baseUrl())
-                .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github.v3+json")
+                .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github+json")
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + gitHubProperties.token())
+                .defaultHeader("X-GitHub-Api-Version: 2022-11-28")
                 .build();
 
     }
