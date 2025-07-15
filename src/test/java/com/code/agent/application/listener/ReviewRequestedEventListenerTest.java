@@ -3,6 +3,7 @@ package com.code.agent.application.listener;
 import com.code.agent.application.event.ReviewCompletedEvent;
 import com.code.agent.application.event.ReviewRequestedEvent;
 import com.code.agent.application.port.out.AiPort;
+import com.code.agent.application.port.out.GitHubPort;
 import com.code.agent.domain.model.PullRequestReviewInfo;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,9 @@ class ReviewRequestedEventListenerTest {
 
     @MockitoBean
     private AiPort aiPort;
+
+    @MockitoBean
+    private GitHubPort gitHubPort;
 
     @Test
     void checkEventPublishing(ApplicationEvents applicationEvents) {
