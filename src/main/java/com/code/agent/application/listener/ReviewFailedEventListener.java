@@ -1,6 +1,6 @@
 package com.code.agent.application.listener;
 
-import com.code.agent.application.event.ReviewCompletedEvent;
+import com.code.agent.application.event.ReviewFailedEvent;
 import com.code.agent.application.port.out.GitHubPort;
 import com.code.agent.config.ExecutorName;
 import lombok.RequiredArgsConstructor;
@@ -13,17 +13,18 @@ import reactor.core.publisher.Mono;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class ReviewCompletedEventListener {
+public class ReviewFailedEventListener {
     private final GitHubPort gitHubPort;
 
     @Async(ExecutorName.REVIEW_TASK_EXECUTOR)
     @EventListener
-    public void handleReviewCompletedEvent(ReviewCompletedEvent event) {
-        Mono<Void> postTask = gitHubPort.postReviewComment(event.reviewInfo(), event.reviewResult());
+    public void handleReviewFailedEvent(ReviewFailedEvent event) {
+        Mono<Void> postTask = gitHubPort.postReviewComment(event.reviewInfo(), event.message());
         postTask.subscribe(
                 null,
-                error -> log.error("Post review comment failed for pull request",error),
+                error -> log.error("Post review comment failed for pull request"),
                 () -> log.info("Post review comment completed for pull request {}", event.reviewInfo().pullRequestNumber())
         );
+
     }
 }
