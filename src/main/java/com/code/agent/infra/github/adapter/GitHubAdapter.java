@@ -2,32 +2,42 @@ package com.code.agent.infra.github.adapter;
 
 import com.code.agent.domain.model.PullRequestReviewInfo;
 import com.code.agent.application.port.out.GitHubPort;
+import com.code.agent.infra.config.GitHubProperties;
 import com.code.agent.infra.github.event.GitHubReviewEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
-import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+import reactor.util.retry.Retry;
 
-@Component
+import java.time.Duration;
+
 @RequiredArgsConstructor
 public class GitHubAdapter implements GitHubPort {
 
     private final WebClient gitHubWebClient;
+    private final GitHubProperties gitHubProperties;
+    private final Duration timeoutGet;
+    private final Retry retryGet;
+    private final Duration timeoutPost;
+    private final Retry retryPost;
 
     @Override
-    public String getDiff(PullRequestReviewInfo reviewInfo) {
+    public Mono<String> getDiff(PullRequestReviewInfo reviewInfo) {
         return gitHubWebClient.get()
                 .uri(reviewInfo.diffUrl())
                 .retrieve()
                 .bodyToMono(String.class)
-                .block();
+                .timeout(timeoutGet)
+                .retryWhen(retryGet);
     }
 
     @Override
-    public void postReviewComment(PullRequestReviewInfo reviewInfo, String comment) {
+    public Mono<Void> postReviewComment(PullRequestReviewInfo reviewInfo, String comment) {
         GitHubReviewEvent gitHubReviewEvent = GitHubReviewEvent.simpleReviewEvent(comment);
-        gitHubWebClient.post()
-                .uri("/repos/{owner}/{repo}/pulls/{pullNumber}/reviews",
+
+        return gitHubWebClient.post()
+                .uri(gitHubProperties.reviewPath(),
                         reviewInfo.repositoryOwner(),
                         reviewInfo.repositoryName(),
                         reviewInfo.pullRequestNumber())
@@ -35,6 +45,11 @@ public class GitHubAdapter implements GitHubPort {
                 .bodyValue(gitHubReviewEvent)
                 .retrieve()
                 .toBodilessEntity()
-                .block();
+                .timeout(timeoutPost)
+                .retryWhen(retryPost)
+                .then();
     }
+
+
 }
+
