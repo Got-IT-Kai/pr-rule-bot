@@ -1,6 +1,7 @@
 package com.code.agent.infra.config;
 
 import io.netty.channel.ChannelOption;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +15,7 @@ import java.time.Duration;
 public class WebClientConfig {
 
     @Bean
+    @Qualifier("gitHubWebClient")
     WebClient gitHubWebClient(GitHubProperties gitHubProperties) {
         HttpClient httpClient = HttpClient.create()
                 .followRedirect(true)
@@ -27,5 +29,20 @@ public class WebClientConfig {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
 
+    }
+
+    @Bean
+    @Qualifier("ollamaWebClient")
+    WebClient ollamaWebClient() {
+        HttpClient httpClient = HttpClient.create()
+                .responseTimeout(Duration.ofMinutes(10))
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
+                .followRedirect(true);
+
+        return WebClient.builder()
+                .baseUrl("http://localhost:11434")
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .build();
     }
 }
