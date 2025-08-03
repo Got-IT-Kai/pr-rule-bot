@@ -18,10 +18,9 @@ public class GitHubAdapterConfig {
     public GitHubAdapter gitHubAdapter(@Qualifier("gitHubWebClient") WebClient gitHubWebClient,
                                        GitHubProperties gitHubProperties) {
         Duration timeout = Duration.ofSeconds(10);
-        Retry retryGet = Retry.backoff(3, Duration.ofSeconds(2)).jitter(0.5);
-        Retry retryPost = Retry.backoff(1, Duration.ofSeconds(2))
-                .filter(GitHubRetryUtil::isRetryableError)
-                .jitter(0.5);
+        Retry retryGet = Retry.fixedDelay(3, Duration.ofSeconds(2));
+        Retry retryPost = Retry.fixedDelay(1, Duration.ofSeconds(2))
+                .filter(GitHubRetryUtil::isRetryableError);
 
         return new GitHubAdapter(gitHubWebClient, gitHubProperties, timeout, retryGet, timeout, retryPost);
 

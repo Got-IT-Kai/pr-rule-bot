@@ -26,13 +26,13 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
+    implementation 'io.projectreactor:reactor-core'
     implementation 'io.projectreactor.netty:reactor-netty-http'
     implementation 'com.knuddels:jtokkit:1.0.0'
 
     //implementation 'org.springframework.ai:spring-ai-starter-vector-store-chroma'
 
     implementation 'io.github.cdimascio:dotenv-java:2.3.2'
-
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
@@ -41,6 +41,8 @@ dependencies {
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
     testImplementation 'io.projectreactor:reactor-test'
+    testImplementation 'io.projectreactor.tools:blockhound:1.0.8.RELEASE'
+    testImplementation 'org.mockito:mockito-inline:5.2.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -56,5 +58,6 @@ bootRun {
 
 tasks.named('test') {
     useJUnitPlatform()
-
+    jvmArgs += ['-XX:+EnableDynamicAgentLoading',
+                '-XX:+AllowRedefinitionToAddDeleteMethods']
 }

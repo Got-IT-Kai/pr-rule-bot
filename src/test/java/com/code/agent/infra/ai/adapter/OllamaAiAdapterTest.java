@@ -1,22 +1,31 @@
 package com.code.agent.infra.ai.adapter;
 
+import com.code.agent.infra.config.PromptProperties;
+import com.knuddels.jtokkit.api.Encoding;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.prompt.Prompt;
+import org.springframework.core.io.ByteArrayResource;
+import reactor.blockhound.BlockingOperationError;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
+import reactor.test.StepVerifier;
 
-import java.util.List;
+import java.nio.charset.StandardCharsets;
 import java.util.stream.Stream;
 
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -32,104 +41,17 @@ class OllamaAiAdapterTest {
     private ChatClient.ChatClientRequestSpec mockChatClientRequestSpec;
 
     @Mock
-    private ChatClient.CallResponseSpec mockCallResponseSpec;
+    private ChatClient.StreamResponseSpec mockStreamResponseSpec;
+
+    @Mock
+    private Encoding encoding;
 
     @Captor
-    ArgumentCaptor<String> promptCaptor;
-
+    ArgumentCaptor<Prompt> promptCaptor;
 
     private OllamaAiAdapter ollamaAiAdapter;
 
-    @BeforeEach
-    void setUp() {
-        when(mockChatClientBuilder.build()).thenReturn(mockChatClient);
-        ollamaAiAdapter = new OllamaAiAdapter(mockChatClientBuilder);
-    }
-
-    static Stream<Arguments> diffProvider() {
-        return Stream.of(
-                Arguments.of("""
-                diff --git a/src/main/java/com/example/service/UserService.java b/src/main/java/com/example/service/UserService.java
-                --- a/src/main/java/com/example/service/UserService.java
-                +++ b/src/main/java/com/example/service/UserService.java
-                @@ -10,1 +10,1 @@
-                -    // old code
-                +    // new code for user
-                diff --git a/src/main/java/com/example/service/OrderService.java b/src/main/java/com/example/service/OrderService.java
-                --- a/src/main/java/com/example/service/OrderService.java
-                +++ b/src/main/java/com/example/service/OrderService.java
-                @@ -25,1 +25,1 @@
-                -    return "order";
-                +    return "new order";
-                """, "This is a mock comment based on the diff provided."),
-                Arguments.of("""
-                diff --git a/src/main/java/com/example/App.java b/src/main/java/com/example/App.java\r\n" +
-                "--- a/src/main/java/com/example/App.java\r\n" +
-                "+++ b/src/main/java/com/example/App.java\r\n" +
-                "@@ -1 +1 @@\r\n" +
-                "-old\r\n" +
-                "+new\r\n" +
-                "diff --git a/src/main/java/com/example/Util.java b/src/main/java/com/example/Util.java\r\n" +
-                "--- a/src/main/java/com/example/Util.java\r\n" +
-                "+++ b/src/main/java/com/example/Util.java\r\n" +
-                "@@ -2 +2 @@\r\n" +
-                "-foo\r\n" +
-                "+bar\r\n";""", "This is a mock comment based on the diff provided.")
-        );
-    }
-    @ParameterizedTest
-    @MethodSource("diffProvider")
-    void testEvaluateDiff(String diff, String expected) {
-        when(mockChatClient.prompt()).thenReturn(mockChatClientRequestSpec);
-        when(mockChatClientRequestSpec.user(anyString())).thenReturn(mockChatClientRequestSpec);
-        when(mockChatClientRequestSpec.call()).thenReturn(mockCallResponseSpec);
-        when(mockCallResponseSpec.content()).thenReturn("This is a mock comment based on the diff provided.");
-
-        String actual = ollamaAiAdapter.evaluateDiff(diff);
-
-        assertThat(actual).isEqualTo(expected);
-    }
-
-
-    @Test
-    void blankDiff_returns() {
-        String out = ollamaAiAdapter.evaluateDiff("  ");
-        assertThat(out).isEqualTo("No changes to review.");
-        verifyNoInteractions(mockChatClient);
-    }
-
-    static Stream<String> singleDiffs() {
-        String unix = "diff --git a/src/main/java/com/example/service/UserService.java b/src/main/java/com/example/service/UserService.java\n" +
-                "--- a/src/main/java/com/example/service/UserService.java\n" +
-                "+++ b/src/main/java/com/example/service/UserService.java\n" +
-                "@@ -10,1 +10,1 @@\n" +
-                "-    // old code\n" +
-                "+    // new code for user\n";
-        String windows = unix.replace("\n", "\r\n");
-        return Stream.of(unix, windows);
-    }
-
-    @ParameterizedTest
-    @MethodSource("singleDiffs")
-    void singleDiff_os_independent(String diff) {
-        when(mockChatClient.prompt()).thenReturn(mockChatClientRequestSpec);
-        when(mockChatClientRequestSpec.user(anyString())).thenReturn(mockChatClientRequestSpec);
-        when(mockChatClientRequestSpec.call()).thenReturn(mockCallResponseSpec);
-        when(mockCallResponseSpec.content()).thenReturn("This is a mock comment based on the diff provided.");
-
-        String out = ollamaAiAdapter.evaluateDiff(diff);
-        assertThat(out).isEqualTo("This is a mock comment based on the diff provided.");
-
-        verify(mockChatClientRequestSpec).user(promptCaptor.capture());
-        String expectedPrompt = promptCaptor.getValue();
-
-        assertThat(expectedPrompt).contains(diff);
-    }
-
-
-    @Test
-    void multipleDiffs() {
-        String diff = """
+    final String diff = """
                 diff --git a/src/main/java/com/example/service/UserService.java b/src/main/java/com/example/service/UserService.java
                 --- a/src/main/java/com/example/service/UserService.java
                 +++ b/src/main/java/com/example/service/UserService.java
@@ -144,21 +66,189 @@ class OllamaAiAdapterTest {
                 +    return "new order";
                 """;
 
-        when(mockChatClient.prompt()).thenReturn(mockChatClientRequestSpec);
-        when(mockChatClientRequestSpec.user(anyString())).thenReturn(mockChatClientRequestSpec);
-        when(mockChatClientRequestSpec.call()).thenReturn(mockCallResponseSpec);
-        when(mockCallResponseSpec.content()).thenReturn("This is a mock comment based on the diff provided.");
-
-        String out = ollamaAiAdapter.evaluateDiff(diff);
-        assertThat(out).isEqualTo("This is a mock comment based on the diff provided.");
-
-        verify(mockChatClientRequestSpec, times(3)).user(promptCaptor.capture());
-        List<String> prompts = promptCaptor.getAllValues();
-
-        assertThat(prompts.get(0)).contains("UserService.java").doesNotContain("OrderService.java");
-        assertThat(prompts.get(1)).contains("OrderService.java").doesNotContain("UserService.java");
-        assertThat(prompts.get(2)).contains("Individual Code Reviews");
+    @BeforeAll
+    static void initBlockHound() {
+        //BlockHound.install();
     }
 
+    @BeforeEach
+    void setUp() {
+        when(mockChatClientBuilder.build()).thenReturn(mockChatClient);
+
+        String codeReviewTemplate = """
+                {diff}
+                """;
+        String mergeTemplate = """
+                {merge}
+                """;
+
+        PromptProperties promptProperties = new PromptProperties(
+                new ByteArrayResource(codeReviewTemplate.getBytes(StandardCharsets.UTF_8)),
+                new ByteArrayResource(mergeTemplate.getBytes(StandardCharsets.UTF_8)));
+        ollamaAiAdapter = new OllamaAiAdapter(mockChatClientBuilder, encoding, promptProperties);
+    }
+
+    private void setUpPromptChain() {
+        when(mockChatClient.prompt(any(Prompt.class))).thenReturn(mockChatClientRequestSpec);
+        when(mockChatClientRequestSpec.stream()).thenReturn(mockStreamResponseSpec);
+        when(mockStreamResponseSpec.content()).thenReturn(Flux.just("OK"));
+
+        when(encoding.countTokens(anyString())).thenReturn(50);
+    }
+
+    @Test
+    void blankDiff_returns() {
+        StepVerifier.create(ollamaAiAdapter.evaluateDiff(""))
+                .expectNext("No changes to review.")
+                .verifyComplete();
+        verifyNoInteractions(mockChatClient);
+    }
+
+    @Nested
+    class SingleFile {
+
+        @BeforeEach
+        void setUp() {
+            setUpPromptChain();
+        }
+
+        static Stream<String> singleDiffs() {
+            String unix = "diff --git a/src/main/java/com/example/service/UserService.java b/src/main/java/com/example/service/UserService.java\n" +
+                    "--- a/src/main/java/com/example/service/UserService.java\n" +
+                    "+++ b/src/main/java/com/example/service/UserService.java\n" +
+                    "@@ -10,1 +10,1 @@\n" +
+                    "-    // old code\n" +
+                    "+    // new code for user\n";
+            String windows = unix.replace("\n", "\r\n");
+            return Stream.of(unix, windows);
+        }
+
+        @ParameterizedTest
+        @MethodSource("singleDiffs")
+        void singleFile_os_independent(String diff) {
+            when(mockStreamResponseSpec.content())
+                    .thenReturn(Flux.just("Start"))
+                    .thenReturn(Flux.just("OK"));
+
+            StepVerifier.create(ollamaAiAdapter.evaluateDiff(diff))
+                    .expectNext("OK")
+                    .verifyComplete();
+
+            verify(mockChatClient, times(2)).prompt(any(Prompt.class));
+        }
+
+    }
+
+    @Nested
+    class MultipleFiles {
+
+        @BeforeEach
+        void setUp() {
+            setUpPromptChain();
+        }
+
+        @Test
+        void multiFile_merge() {
+            when(mockStreamResponseSpec.content())
+                    .thenReturn(Flux.just("OK1"))
+                    .thenReturn(Flux.just("OK2"))
+                    .thenReturn(Flux.just("Merged reviews"));
+
+            StepVerifier.create(ollamaAiAdapter.evaluateDiff(diff))
+                    .expectNext("Merged reviews")
+                    .verifyComplete();
+
+            verify(mockChatClient, times(3)).prompt(promptCaptor.capture());
+
+            Prompt prompt = promptCaptor.getAllValues().get(2);
+
+            assertThat(prompt.getContents()).contains("OK1", "OK2");
+
+        }
+
+        @Test
+        void multiFilePrompt() {
+            when(mockStreamResponseSpec.content())
+                    .thenReturn(Flux.just("OK1"))
+                    .thenReturn(Flux.just("OK2"))
+                    .thenReturn(Flux.just("Merged reviews"));
+
+            StepVerifier.create(ollamaAiAdapter.evaluateDiff(diff))
+                    .expectNext("Merged reviews")
+                    .verifyComplete();
+
+            verify(mockChatClient, times(3)).prompt(any(Prompt.class));
+
+        }
+    }
+
+    @Nested
+    class TokenGuard {
+
+        @Test
+        void overLimitTokenCount_one() {
+            when(encoding.countTokens(anyString())).thenReturn(10000);
+
+            StepVerifier.create(ollamaAiAdapter.evaluateDiff("HUGE"))
+                    .expectNext("All files exceed the 7680‑token limit")
+                    .verifyComplete();
+
+            verify(mockChatClient, never()).prompt(any(Prompt.class));
+        }
+
+        @Test
+        void overLimitTokenCount_multiple() {
+            setUpPromptChain();
+
+            when(encoding.countTokens(anyString())).thenReturn(5000)
+                    .thenReturn(10000)
+                    .thenReturn(5000);
+
+            when(mockStreamResponseSpec.content())
+                    .thenReturn(Flux.just("SMALL"))
+                    .thenReturn(Flux.just("MERGED"));
+
+            StepVerifier.create(ollamaAiAdapter.evaluateDiff(diff))
+                    .expectNextMatches(result -> result.contains("MERGED")
+                            && result.contains("1 files were not reviewed"))
+                    .verifyComplete();
+
+            verify(mockChatClient, times(2)).prompt(any(Prompt.class));
+        }
+
+        @Test
+        void overLimitTokenCount_merge() {
+            setUpPromptChain();
+
+            when(encoding.countTokens(anyString())).thenReturn(5000)
+                    .thenReturn(5000)
+                    .thenReturn(10000);
+
+            StepVerifier.create(ollamaAiAdapter.evaluateDiff(diff))
+                    .expectNext("Combined reviews exceed the 7680‑token limit")
+                    .verifyComplete();
+
+            verify(mockChatClient, times(2)).prompt(any(Prompt.class));
+        }
+    }
+
+    @Nested
+    class BlockHoundTests {
+
+        @Test
+        void detectBlockingCalls() {
+            Mono<Object> blocking = Mono.fromRunnable(() -> {
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }).subscribeOn(Schedulers.parallel());
+
+            StepVerifier.create(blocking)
+                    .expectError(BlockingOperationError.class)
+                    .verify();
+        }
+    }
 
 }
