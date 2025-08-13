@@ -2,6 +2,8 @@ plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.3'
     id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+    id 'jvm-test-suite'
 }
 
 group = 'com.code'
@@ -36,14 +38,6 @@ dependencies {
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
-
-    testImplementation 'org.projectlombok:lombok'
-    testImplementation 'org.springframework.boot:spring-boot-starter-test'
-    testImplementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
-    testImplementation 'io.projectreactor:reactor-test'
-    testImplementation 'io.projectreactor.tools:blockhound:1.0.8.RELEASE'
-    testImplementation 'org.mockito:mockito-inline:5.2.0'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 dependencyManagement {
@@ -56,8 +50,69 @@ bootRun {
     jvmArgs += ["-javaagent:${project.rootDir}/otel/opentelemetry-javaagent.jar"]
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
-    jvmArgs += ['-XX:+EnableDynamicAgentLoading',
-                '-XX:+AllowRedefinitionToAddDeleteMethods']
+testing {
+    suites {
+        test(JvmTestSuite) {
+            useJUnitJupiter()
+            dependencies {
+                implementation 'org.springframework.boot:spring-boot-starter-test'
+                implementation 'io.projectreactor:reactor-test'
+                implementation 'org.mockito:mockito-inline:5.2.0'
+                implementation 'io.projectreactor.tools:blockhound:1.0.8.RELEASE'
+                implementation 'org.junit.platform:junit-platform-launcher'
+            }
+            targets.all {
+                testTask.configure {
+                    systemProperty 'blockhound.enabled', 'true'
+                    jvmArgs += ['-XX:+EnableDynamicAgentLoading',
+                                '-XX:+AllowRedefinitionToAddDeleteMethods']
+                }
+            }
+        }
+
+        integrationTest(JvmTestSuite) {
+            useJUnitJupiter()
+            dependencies {
+                implementation project()
+                implementation 'org.springframework.boot:spring-boot-starter-test'
+                implementation 'io.projectreactor:reactor-test'
+                implementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+                implementation 'org.springframework:spring-webflux'
+                implementation 'io.projectreactor.netty:reactor-netty-http'
+            }
+            targets.all {
+                testTask.configure {
+                    shouldRunAfter(tasks.named('test'))
+                    systemProperty 'blockhound.enabled', 'false'
+                    jvmArgs += ['-XX:+EnableDynamicAgentLoading', '-Xshare:off']
+                }
+            }
+        }
+    }
+}
+
+tasks.named('check') {
+    dependsOn tasks.named('integrationTest')
+}
+
+tasks.named('jacocoTestReport') {
+    reports {
+        xml.required = true
+        html.required = true
+    }
+    dependsOn tasks.test
+}
+
+tasks.register('jacocoMergeReport', JacocoReport) {
+    dependsOn(tasks.test, tasks.named('integrationTest'))
+
+    executionData fileTree(dir: layout.buildDirectory.dir("jacoco"), include: ["*.exec"])
+
+    sourceDirectories.setFrom files(sourceSets.main.allSource.srcDirs)
+    classDirectories.setFrom files(sourceSets.main.output)
+
+    reports {
+        xml.required = true
+        html.required = true
+    }
 }

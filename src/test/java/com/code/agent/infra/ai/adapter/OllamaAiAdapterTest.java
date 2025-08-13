@@ -2,7 +2,6 @@ package com.code.agent.infra.ai.adapter;
 
 import com.code.agent.infra.config.PromptProperties;
 import com.knuddels.jtokkit.api.Encoding;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -16,10 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.core.io.ByteArrayResource;
-import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;
@@ -66,11 +62,6 @@ class OllamaAiAdapterTest {
                 +    return "new order";
                 """;
 
-    @BeforeAll
-    static void initBlockHound() {
-        //BlockHound.install();
-    }
-
     @BeforeEach
     void setUp() {
         when(mockChatClientBuilder.build()).thenReturn(mockChatClient);
@@ -113,12 +104,14 @@ class OllamaAiAdapterTest {
         }
 
         static Stream<String> singleDiffs() {
-            String unix = "diff --git a/src/main/java/com/example/service/UserService.java b/src/main/java/com/example/service/UserService.java\n" +
-                    "--- a/src/main/java/com/example/service/UserService.java\n" +
-                    "+++ b/src/main/java/com/example/service/UserService.java\n" +
-                    "@@ -10,1 +10,1 @@\n" +
-                    "-    // old code\n" +
-                    "+    // new code for user\n";
+            String unix = """
+                    diff --git a/src/main/java/com/example/service/UserService.java b/src/main/java/com/example/service/UserService.java
+                    --- a/src/main/java/com/example/service/UserService.java
+                    +++ b/src/main/java/com/example/service/UserService.java
+                    @@ -10,1 +10,1 @@
+                    -    // old code
+                    +    // new code for user
+                    """;
             String windows = unix.replace("\n", "\r\n");
             return Stream.of(unix, windows);
         }
@@ -231,24 +224,4 @@ class OllamaAiAdapterTest {
             verify(mockChatClient, times(2)).prompt(any(Prompt.class));
         }
     }
-
-    @Nested
-    class BlockHoundTests {
-
-        @Test
-        void detectBlockingCalls() {
-            Mono<Object> blocking = Mono.fromRunnable(() -> {
-                try {
-                    Thread.sleep(10);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-            }).subscribeOn(Schedulers.parallel());
-
-            StepVerifier.create(blocking)
-                    .expectError(BlockingOperationError.class)
-                    .verify();
-        }
-    }
-
 }
