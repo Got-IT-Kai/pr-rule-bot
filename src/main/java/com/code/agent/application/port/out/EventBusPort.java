@@ -1,5 +1,7 @@
 package com.code.agent.application.port.out;
 
+import reactor.core.publisher.Mono;
+
 public interface EventBusPort {
-    void publishEvent(Object event);
+    Mono<Void> publishEvent(Object event);
 }

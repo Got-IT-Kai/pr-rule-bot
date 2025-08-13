@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @RestController
@@ -20,17 +21,16 @@ public class GitHubWebhookController {
             path = "/api/v1/webhooks/github/pull_request",
             headers = "X-GitHub-Event=pull_request"
     )
-    public ResponseEntity<Void> handleGitHubWebhook(@RequestBody GitHubPullRequestEvent event) {
+    public Mono<ResponseEntity<Void>> handleGitHubWebhook(@RequestBody GitHubPullRequestEvent event) {
         log.info("Received GitHub pull request event: {}", event);
         if (!event.isReviewTriggered()) {
-            return ResponseEntity.ok().build();
+            return Mono.just(ResponseEntity.ok().build());
         }
 
-        reviewCoordinator.startReview(new PullRequestReviewInfo(event.repository().owner().login(),
+        return reviewCoordinator.startReview(new PullRequestReviewInfo(event.repository().owner().login(),
                 event.repository().name(),
                 event.number(),
-                event.pullRequest().diffUrl()));
-
-        return ResponseEntity.ok().build();
+                event.pullRequest().diffUrl()))
+                .thenReturn(ResponseEntity.ok().build());
     }
 }

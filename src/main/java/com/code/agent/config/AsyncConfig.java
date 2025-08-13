@@ -7,8 +7,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
 
-@Configuration
-@EnableAsync
+@Deprecated
+//@Configuration
+//@EnableAsync
 public class AsyncConfig {
 
     @Bean(name = ExecutorName.AI_TASK_EXECUTOR)

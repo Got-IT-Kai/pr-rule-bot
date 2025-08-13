@@ -8,6 +8,7 @@ import com.code.agent.application.port.out.GitHubPort;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 @Slf4j
 @Service
@@ -16,13 +17,18 @@ public class ReviewCoordinator {
     private final GitHubPort gitHubPort;
     private final EventBusPort eventBusPort;
 
-    public void startReview(PullRequestReviewInfo command) {
-        gitHubPort.getDiff(command)
-                .doOnSuccess(diff -> eventBusPort.publishEvent(new ReviewRequestedEvent(command, diff)))
+    public Mono<Void> startReview(PullRequestReviewInfo info) {
+        return gitHubPort.getDiff(info)
+                .flatMap(diff -> {
+                    log.debug("Pull request {} diff fetched successfully", info.pullRequestNumber());
+                    return eventBusPort.publishEvent(new ReviewRequestedEvent(info, diff));
+                })
                 .doOnError(error -> {
-                    log.error("Failed to fetch diff for pull request {}: {}", command.pullRequestNumber(), error.getMessage());
-                    eventBusPort.publishEvent(new ReviewFailedEvent(command, error.getMessage()));
-                }).subscribe();
+                    log.error("Failed to fetch diff for pull request {}", info.pullRequestNumber(), error);
+                })
+                .onErrorResume(error ->
+                        eventBusPort.publishEvent(new ReviewFailedEvent(info, error.getMessage()))
+                                .then());
     }
 
 }
