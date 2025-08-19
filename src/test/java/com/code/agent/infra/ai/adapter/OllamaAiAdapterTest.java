@@ -1,6 +1,7 @@
 package com.code.agent.infra.ai.adapter;
 
-import com.code.agent.infra.config.PromptProperties;
+import com.code.agent.infra.ai.model.AiProvider;
+import com.code.agent.infra.config.AiProperties;
 import com.knuddels.jtokkit.api.Encoding;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -19,6 +20,7 @@ import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -73,10 +75,12 @@ class OllamaAiAdapterTest {
                 {merge}
                 """;
 
-        PromptProperties promptProperties = new PromptProperties(
+        AiProperties.Prompt prompt = new AiProperties.Prompt(
                 new ByteArrayResource(codeReviewTemplate.getBytes(StandardCharsets.UTF_8)),
                 new ByteArrayResource(mergeTemplate.getBytes(StandardCharsets.UTF_8)));
-        ollamaAiAdapter = new OllamaAiAdapter(mockChatClientBuilder, encoding, promptProperties);
+        AiProperties aiProperties = new AiProperties(AiProvider.OLLAMA, Map.of(AiProvider.OLLAMA, prompt));
+
+        ollamaAiAdapter = new OllamaAiAdapter(mockChatClientBuilder, encoding, aiProperties);
     }
 
     private void setUpPromptChain() {

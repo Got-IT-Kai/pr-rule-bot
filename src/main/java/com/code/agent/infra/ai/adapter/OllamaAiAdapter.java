@@ -1,11 +1,13 @@
 package com.code.agent.infra.ai.adapter;
 
 import com.code.agent.application.port.out.AiPort;
-import com.code.agent.infra.config.PromptProperties;
+import com.code.agent.infra.ai.model.AiProvider;
+import com.code.agent.infra.config.AiProperties;
 import com.knuddels.jtokkit.api.Encoding;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Flux;
@@ -19,6 +21,7 @@ import java.util.stream.Collectors;
 
 @Slf4j
 @Component
+@Primary
 public class OllamaAiAdapter implements AiPort {
 
     private final ChatClient chatClient;
@@ -34,11 +37,12 @@ public class OllamaAiAdapter implements AiPort {
 
     public OllamaAiAdapter(ChatClient.Builder chatClientBuilder,
                            Encoding tiktokenEncoding,
-                           PromptProperties promptProperties) {
+                           AiProperties aiProperties) {
         this.chatClient = chatClientBuilder.build();
         this.tiktokenEncoding = tiktokenEncoding;
-        this.codeReviewPrompt = new PromptTemplate(promptProperties.codeReviewPrompt());
-        this.reviewMergePrompt = new PromptTemplate(promptProperties.reviewMergePrompt());
+        AiProperties.Prompt prompt = aiProperties.prompts().get(AiProvider.OLLAMA);
+        this.codeReviewPrompt = new PromptTemplate(prompt.codeReviewPrompt());
+        this.reviewMergePrompt = new PromptTemplate(prompt.reviewMergePrompt());
     }
 
     @Override
