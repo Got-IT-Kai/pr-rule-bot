@@ -26,6 +26,8 @@ github:
   review-path: "/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
 
 ai:
-  prompt:
-    code-review-prompt: "classpath:/prompts/code-review.st"
-    review-merge-prompt: "classpath:/prompts/review-merge.st"
+  prompts:
+    ollama:
+      code-review-prompt: "classpath:/prompts/code-review.st"
+      review-merge-prompt: "classpath:/prompts/review-merge.st"
+  provider: ollama
