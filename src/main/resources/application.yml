@@ -10,6 +10,15 @@ spring:
         model: llama3:8b-instruct-q8_0
         options:
           temperature: 0.2
+    vertex:
+      ai:
+        gemini:
+          project-id: ${GCP_PROJECT_ID}
+          location: ${GCP_LOCATION:us-central1}
+          chat:
+            options:
+              model: gemini-1.5-flash
+              temperature: 0.2
     vector-store:
       chroma:
         client:
@@ -28,6 +37,9 @@ github:
 ai:
   prompts:
     ollama:
+      code-review-prompt: "classpath:/prompts/code-review.st"
+      review-merge-prompt: "classpath:/prompts/review-merge.st"
+    gemini:
       code-review-prompt: "classpath:/prompts/code-review.st"
       review-merge-prompt: "classpath:/prompts/review-merge.st"
   provider: ollama

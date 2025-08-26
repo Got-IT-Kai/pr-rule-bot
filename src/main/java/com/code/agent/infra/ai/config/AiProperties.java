@@ -1,6 +1,7 @@
-package com.code.agent.infra.config;
+package com.code.agent.infra.ai.config;
 
 import com.code.agent.infra.ai.model.AiProvider;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
@@ -11,11 +12,10 @@ import java.util.Map;
 @ConfigurationProperties(prefix= "ai")
 @Validated
 public record AiProperties(@NotNull AiProvider provider,
-                           Map<AiProvider, Prompt> prompts) {
+                           Map<AiProvider, @Valid Prompt> prompts) {
 
     public record Prompt(
-            Resource codeReviewPrompt,
-            Resource reviewMergePrompt
-    ) {
-    }
+            @NotNull Resource codeReviewPrompt,
+            @NotNull Resource reviewMergePrompt
+    ) {}
 }

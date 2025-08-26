@@ -1,7 +1,7 @@
 package com.code.agent.infra.ai.adapter;
 
 import com.code.agent.infra.ai.model.AiProvider;
-import com.code.agent.infra.config.AiProperties;
+import com.code.agent.infra.ai.config.AiProperties;
 import com.knuddels.jtokkit.api.Encoding;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;

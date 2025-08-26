@@ -2,7 +2,7 @@ package com.code.agent.infra.ai.router;
 
 import com.code.agent.infra.ai.model.AiProvider;
 import com.code.agent.infra.ai.spi.AiModelClient;
-import com.code.agent.infra.config.AiProperties;
+import com.code.agent.infra.ai.config.AiProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
@@ -21,11 +21,26 @@ public class AiRouter {
 
     public AiModelClient active() {
         AiModelClient client = aiModelClients.get(configured);
+
         if (client == null) {
             log.warn("No AI client found for provider: {}", configured);
             throw new IllegalStateException("No AI client registered for provider: " + configured);
         }
 
-        return client;
+        if (client.isReady()) {
+            return client;
+        }
+
+        AiModelClient fallbackClient = aiModelClients.values().stream()
+                .filter(AiModelClient::isReady)
+                .findFirst()
+                .orElseThrow(() -> new IllegalStateException("No AI client is ready for provider: " + configured));
+
+        if (fallbackClient != null) {
+            log.warn("Select Provider {} not ready. Falling back to {}.", configured, fallbackClient.modelName());
+            return fallbackClient;
+        }
+
+        throw new IllegalStateException("No AI client is ready for provider " + configured + " and no fallback available.");
     }
 }

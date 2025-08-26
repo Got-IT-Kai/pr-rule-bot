@@ -2,7 +2,7 @@ package com.code.agent.infra.github.adapter;
 
 import com.code.agent.domain.model.PullRequestReviewInfo;
 import com.code.agent.application.port.out.GitHubPort;
-import com.code.agent.infra.config.GitHubProperties;
+import com.code.agent.infra.github.config.GitHubProperties;
 import com.code.agent.infra.github.event.GitHubReviewEvent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;

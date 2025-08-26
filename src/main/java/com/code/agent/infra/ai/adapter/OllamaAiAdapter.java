@@ -2,7 +2,7 @@ package com.code.agent.infra.ai.adapter;
 
 import com.code.agent.application.port.out.AiPort;
 import com.code.agent.infra.ai.model.AiProvider;
-import com.code.agent.infra.config.AiProperties;
+import com.code.agent.infra.ai.config.AiProperties;
 import com.knuddels.jtokkit.api.Encoding;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
