@@ -4,6 +4,13 @@ spring:
   jackson:
     property-naming-strategy: SNAKE_CASE
   ai:
+    vector-store:
+      chroma:
+        client:
+          host: ${CHROMA_HOST:http://localhost}
+          port: ${CHROMA_PORT:8000}
+          collection-name: ${CHROMA_COLLECTION_NAME}
+        # initialize-schema: true
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
@@ -17,17 +24,8 @@ spring:
           location: ${GCP_LOCATION:us-central1}
           chat:
             options:
-              model: gemini-1.5-flash
+              model: gemini-2.0-flash-001
               temperature: 0.2
-    vector-store:
-      chroma:
-        client:
-          host: ${CHROMA_HOST:http://localhost}
-          port: ${CHROMA_PORT:8000}
-        collection-name: ${CHROMA_COLLECTION_NAME}
-        # initialize-schema: true
-  profiles:
-    active: local
 
 github:
   base-url: "https://api.github.com"
@@ -42,4 +40,4 @@ ai:
     gemini:
       code-review-prompt: "classpath:/prompts/code-review.st"
       review-merge-prompt: "classpath:/prompts/review-merge.st"
-  provider: ollama
+  provider: gemini
