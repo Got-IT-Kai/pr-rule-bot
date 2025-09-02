@@ -1,4 +1,4 @@
-package com.code.agent.infra.config;
+package com.code.agent.infra.github.config;
 
 import io.netty.channel.ChannelOption;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -12,7 +12,7 @@ import reactor.netty.http.client.HttpClient;
 import java.time.Duration;
 
 @Configuration
-public class WebClientConfig {
+public class GitClientConfig {
 
     @Bean
     @Qualifier("gitHubWebClient")
@@ -29,20 +29,5 @@ public class WebClientConfig {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
 
-    }
-
-    @Bean
-    @Qualifier("ollamaWebClient")
-    WebClient ollamaWebClient() {
-        HttpClient httpClient = HttpClient.create()
-                .responseTimeout(Duration.ofMinutes(10))
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
-                .followRedirect(true);
-
-        return WebClient.builder()
-                .baseUrl("http://localhost:11434")
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
-                .build();
     }
 }

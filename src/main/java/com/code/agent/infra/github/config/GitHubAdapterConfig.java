@@ -1,6 +1,5 @@
 package com.code.agent.infra.github.config;
 
-import com.code.agent.infra.config.GitHubProperties;
 import com.code.agent.infra.github.adapter.GitHubAdapter;
 import com.code.agent.infra.github.util.GitHubRetryUtil;
 import org.springframework.beans.factory.annotation.Qualifier;

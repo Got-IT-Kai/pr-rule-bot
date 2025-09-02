@@ -1,7 +1,7 @@
 package com.code.agent.github.adapter;
 
 import com.code.agent.domain.model.PullRequestReviewInfo;
-import com.code.agent.infra.config.GitHubProperties;
+import com.code.agent.infra.github.config.GitHubProperties;
 import com.code.agent.infra.github.adapter.GitHubAdapter;
 import com.code.agent.infra.github.util.GitHubRetryUtil;
 import okhttp3.mockwebserver.MockResponse;

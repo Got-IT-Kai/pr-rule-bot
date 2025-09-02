@@ -53,17 +53,6 @@ public class CodeReviewService implements AiPort {
         return Arrays.asList(normalizedDiff.substring(GIT_DIFF_PREFIX.length()).split(delimiter));
     }
 
-   /* private Mono<String> getReviewForSingleDiff(String diffChunk) {
-            log.debug("Processing diff chunk: {}", diffChunk);
-            Map<String, Object> model = Map.of("diff", diffChunk);
-
-            return chatClient.prompt(codeReviewPrompt.create(model))
-                    .stream()
-                    .content()
-                    .timeout(Duration.ofMinutes(5))
-                    .collect(Collectors.joining());
-    }*/
-
     private Mono<String> synthesizeIndividualReviews(AiModelClient client, List<String> individualReviews, long missingReviewsCount) {
         int maxTokens = client.maxTokens();
         if (individualReviews.isEmpty()) {
@@ -91,25 +80,6 @@ public class CodeReviewService implements AiPort {
         }
 
         return merged;
-
-        /*Map<String, Object> model = Map.of("merge", combinedReviews);
-        Mono<String> mergedByAi = chatClient.prompt(reviewMergePrompt.create(model))
-                .stream()
-                .content()
-                .timeout(Duration.ofMinutes(5))
-                .collect(Collectors.joining());
-
-        if (missingReviewsCount > 0) {
-            return mergedByAi.map(review -> review + """
-                    
-                    ---
-                    %d files were not reviewed due to exceeding the %d‑token limit.
-                    ---
-                    """
-                    .formatted(missingReviewsCount, MAX_TOKENS));
-        } else  {
-            return mergedByAi;
-        }*/
     }
 
     private int countTokens(String text) {

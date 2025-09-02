@@ -1,4 +1,4 @@
-package com.code.agent.infra.config;
+package com.code.agent.infra.github.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
