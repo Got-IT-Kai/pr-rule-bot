@@ -41,3 +41,5 @@ jobs:
             -Dsonar.organization=${{ vars.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=${{ vars.SONAR_PROJECT_KEY }}
             -Dsonar.coverage.jacoco.xmlReportPath=build/reports/jacoco/jacocoMergeReport/jacocoMergeReport.xml
+            -Dsonar.java.binaries=build/classes/java/main
+
