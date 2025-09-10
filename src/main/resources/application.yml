@@ -1,6 +1,9 @@
 # src/main/resources/application.yml
 
 spring:
+  profiles:
+    active:
+      - ${APP_MODE:web}
   jackson:
     property-naming-strategy: SNAKE_CASE
   ai:
@@ -41,3 +44,10 @@ ai:
       code-review-prompt: "classpath:/prompts/code-review.st"
       review-merge-prompt: "classpath:/prompts/review-merge.st"
   provider: gemini
+
+cli:
+  pr-number: ${PR_NUMBER:0}
+  repository:
+    owner: ${REPO_OWNER:kai}
+    name: ${REPO_NAME:pr-rule-bot}
+  time-out-minutes: 20
