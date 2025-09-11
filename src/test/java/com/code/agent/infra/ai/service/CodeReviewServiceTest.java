@@ -162,7 +162,7 @@ class CodeReviewServiceTest {
                     .expectNextMatches(result ->
                             result.contains("MERGED")
                                     && result.contains("1 files were not reviewed")
-                                    && result.contains("7680‑token"))
+                                    && result.contains("7680-token"))
                     .verifyComplete();
 
             verify(client, times(1)).reviewCode(anyString());

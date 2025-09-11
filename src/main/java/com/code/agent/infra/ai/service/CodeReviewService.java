@@ -19,6 +19,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CodeReviewService implements AiPort {
     private static final String GIT_DIFF_PREFIX = "diff --git ";
+    private static final String MISSING_REVIEW_NOTICE = """
+            
+            ---
+            %d files were not reviewed due to exceeding the %d-token limit.
+            ---""";
 
     private final AiRouter aiRouter;
     private final Encoding encoding;
@@ -32,8 +37,8 @@ public class CodeReviewService implements AiPort {
             return Mono.just("No changes to review.");
         }
 
-        AiModelClient client = aiRouter.active();
-        List<String> fileDiffs = splitDiffIntoFiles(diff);
+        final AiModelClient client = aiRouter.active();
+        final List<String> fileDiffs = splitDiffIntoFiles(diff);
 
         return Flux.fromIterable(fileDiffs)
                 .filter(chunk -> tokenGuard(client, chunk))
@@ -48,7 +53,7 @@ public class CodeReviewService implements AiPort {
             return List.of(diff);
         }
 
-        String normalizedDiff = diff.replaceAll("\r\n", "\n").replaceAll("\r", "\n");
+        String normalizedDiff = diff.replace("\r\n", "\n").replace("\r", "\n");
         String delimiter = "\n" + GIT_DIFF_PREFIX;
         return Arrays.asList(normalizedDiff.substring(GIT_DIFF_PREFIX.length()).split(delimiter));
     }
@@ -70,12 +75,7 @@ public class CodeReviewService implements AiPort {
 
         Mono<String> merged = client.reviewMerge(combinedReviews);
         if (missingReviewsCount > 0) {
-            return merged.map(review -> review + """
-                    
-                    ---
-                    %d files were not reviewed due to exceeding the %d‑token limit.
-                    ---
-                    """
+            return merged.map(review -> review + MISSING_REVIEW_NOTICE
                     .formatted(missingReviewsCount, maxTokens));
         }
 

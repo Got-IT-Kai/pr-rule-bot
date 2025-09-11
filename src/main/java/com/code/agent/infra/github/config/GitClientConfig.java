@@ -1,7 +1,6 @@
 package com.code.agent.infra.github.config;
 
 import io.netty.channel.ChannelOption;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
@@ -15,7 +14,6 @@ import java.time.Duration;
 public class GitClientConfig {
 
     @Bean
-    @Qualifier("gitHubWebClient")
     WebClient gitHubWebClient(GitHubProperties gitHubProperties) {
         HttpClient httpClient = HttpClient.create()
                 .followRedirect(true)

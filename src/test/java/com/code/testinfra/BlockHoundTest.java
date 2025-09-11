@@ -6,7 +6,8 @@ import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
-public class BlockHoundTest {
+@SuppressWarnings("java:S2925") // Allow Thread.sleep for BlockHound test
+class BlockHoundTest {
 
     @Test
     void detectBlockingCalls() {

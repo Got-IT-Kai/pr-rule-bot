@@ -13,6 +13,10 @@ public class StringToRepositoryConverter implements Converter<String, Repository
 
     @Override
     public Repository convert(@Nullable String source) {
+        if (source == null) {
+            return null;
+        }
+
         if (!StringUtils.hasText(source)) {
             return null;
         }
