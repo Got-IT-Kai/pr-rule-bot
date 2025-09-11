@@ -39,14 +39,15 @@ jobs:
 
       - name: Build, Test, and Analyze with Gradle (Public)
         if: ${{ github.event.repository.private == false }}
-        run: ./gradlew clean test jacocoTestReport sonar --scan
+        run: ./gradlew --no-daemon clean test jacocoTestReport sonar
         env:
+          PUBLISH_SCAN: "true"
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build, Test, and Analyze with Gradle (Private)
         if: ${{ github.event.repository.private == true }}
-        run: ./gradlew clean test jacocoTestReport sonar --info
+        run: ./gradlew --no-daemon clean test jacocoTestReport sonar --info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

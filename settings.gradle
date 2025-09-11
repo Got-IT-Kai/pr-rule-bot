@@ -8,6 +8,10 @@ develocity {
     buildScan {
         termsOfUseUrl = "https://gradle.com/help/legal-terms-of-use"
         termsOfUseAgree = "yes"
-        publishing.onlyIf { false }
+
+        publishing.onlyIf {
+            System.getenv("PUBLISH_SCAN") == "true" ||
+                    System.getProperty("publishScan") == "true"
+        }
     }
 }
