@@ -45,7 +45,7 @@ public class CodeReviewService implements AiPort {
                 .flatMap(client::reviewCode, 5)
                 .collectList()
                 .flatMap(list ->
-                        synthesizeIndividualReviews(client, list, fileDiffs.size() - list.size()));
+                        synthesizeIndividualReviews(client, list, (long) fileDiffs.size() - list.size()));
     }
 
     private List<String> splitDiffIntoFiles(String diff) {
