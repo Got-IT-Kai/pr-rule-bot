@@ -16,7 +16,6 @@ sonar {
         property "sonar.organization", "got-it-kai"
 
         property "sonar.host.url", "https://sonarcloud.io"
-        property "sonar.java.binaries", "build/classes/java/main"
         property "sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/jacocoMergeReport/jacocoMergeReport.xml"
     }
 }
@@ -103,6 +102,10 @@ testing {
             }
         }
     }
+}
+
+tasks.named("sonar") {
+    dependsOn(tasks.named("jacocoMergeReport"))
 }
 
 tasks.named('check') {
