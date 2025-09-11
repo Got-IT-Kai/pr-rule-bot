@@ -23,9 +23,7 @@ public class ReviewCoordinator {
                     log.debug("Pull request {} diff fetched successfully", info.pullRequestNumber());
                     return eventBusPort.publishEvent(new ReviewRequestedEvent(info, diff));
                 })
-                .doOnError(error -> {
-                    log.error("Failed to fetch diff for pull request {}", info.pullRequestNumber(), error);
-                })
+                .doOnError(error -> log.error("Failed to fetch diff for pull request {}", info.pullRequestNumber(), error))
                 .onErrorResume(error ->
                         eventBusPort.publishEvent(new ReviewFailedEvent(info, error.getMessage()))
                                 .then());
