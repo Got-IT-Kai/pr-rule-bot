@@ -8,6 +8,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  id-token: write  # Required for Workload Identity Federation
 
 jobs:
   ai-review:
