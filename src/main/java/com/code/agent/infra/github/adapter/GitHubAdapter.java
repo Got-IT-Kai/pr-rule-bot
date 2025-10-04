@@ -10,16 +10,12 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 import reactor.util.retry.Retry;
 
-import java.time.Duration;
-
 @RequiredArgsConstructor
 public class GitHubAdapter implements GitHubPort {
 
     private final WebClient gitHubWebClient;
     private final GitHubProperties gitHubProperties;
-    private final Duration timeoutGet;
     private final Retry retryGet;
-    private final Duration timeoutPost;
     private final Retry retryPost;
 
     @Override
@@ -28,7 +24,6 @@ public class GitHubAdapter implements GitHubPort {
                 .uri(reviewInfo.diffUrl())
                 .retrieve()
                 .bodyToMono(String.class)
-                .timeout(timeoutGet)
                 .retryWhen(retryGet);
     }
 
@@ -45,7 +40,6 @@ public class GitHubAdapter implements GitHubPort {
                 .bodyValue(gitHubReviewEvent)
                 .retrieve()
                 .toBodilessEntity()
-                .timeout(timeoutPost)
                 .retryWhen(retryPost)
                 .then();
     }

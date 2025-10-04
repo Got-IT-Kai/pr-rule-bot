@@ -8,17 +8,18 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
-import java.time.Duration;
-
 @Configuration
 public class GitClientConfig {
 
     @Bean
     WebClient gitHubWebClient(GitHubProperties gitHubProperties) {
+        GitHubProperties.Client clientConfig = gitHubProperties.client();
+
         HttpClient httpClient = HttpClient.create()
                 .followRedirect(true)
-                .responseTimeout(Duration.ofSeconds(300))
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000);
+                .responseTimeout(clientConfig.responseTimeout())
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                        (int) clientConfig.connectTimeout().toMillis());
 
         return WebClient.builder().baseUrl(gitHubProperties.baseUrl())
                 .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github+json")

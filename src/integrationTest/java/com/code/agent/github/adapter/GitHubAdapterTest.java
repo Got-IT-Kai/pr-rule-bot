@@ -48,21 +48,25 @@ class GitHubAdapterTest {
                 .build();
 
         String baseUrl = String.format("http://localhost:%s", mockWebServer.getPort());
+        HttpClient httpClient = HttpClient.create(connectionProvider)
+                .responseTimeout(Duration.ofSeconds(1));
+
         WebClient testWebClient = WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github+json")
-                .clientConnector(new ReactorClientHttpConnector(HttpClient.create(connectionProvider)))
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
 
         GitHubProperties gitHubProperties = new GitHubProperties(
                 baseUrl,
                 "test-token",
-                "/repos/{repositoryOwner}/{repositoryName}/pulls/{pullRequestNumber}/reviews"
+                "/repos/{repositoryOwner}/{repositoryName}/pulls/{pullRequestNumber}/reviews",
+                new GitHubProperties.Client(null, null)  // Use defaults
         );
 
         gitHubAdapter = new GitHubAdapter(testWebClient, gitHubProperties,
-                Duration.ofSeconds(1), Retry.fixedDelay(3, Duration.ofMillis(5)),
-                Duration.ofSeconds(1), Retry.fixedDelay(1, Duration.ofMillis(5)).filter(GitHubRetryUtil::isRetryableError));
+                Retry.fixedDelay(3, Duration.ofMillis(5)),
+                Retry.fixedDelay(1, Duration.ofMillis(5)).filter(GitHubRetryUtil::isRetryableError));
     }
 
     @AfterEach

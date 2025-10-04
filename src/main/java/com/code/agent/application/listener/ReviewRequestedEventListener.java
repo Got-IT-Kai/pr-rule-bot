@@ -12,8 +12,6 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.time.Duration;
-
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -32,10 +30,9 @@ public class ReviewRequestedEventListener {
                 .publishOn(Schedulers.boundedElastic())
                 .flatMap(eventBusPort::publishEvent)
                 .onErrorResume(error -> {
-                    log.debug("Pull request {} review failed", event.reviewInfo().pullRequestNumber(), error);
+                    log.error("Pull request {} review failed", event.reviewInfo().pullRequestNumber(), error);
                     return eventBusPort.publishEvent(
                             new ReviewFailedEvent(event.reviewInfo(), error.getMessage()));
-                })
-                .timeout(Duration.ofMinutes(10));
+                });
     }
 }
