@@ -7,6 +7,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -23,6 +25,7 @@ public class ReviewCli implements ApplicationRunner {
     private final AiPort aiPort;
     private final GitHubReviewService gitHubReviewService;
     private final CliProperties cliProperties;
+    private final ConfigurableApplicationContext applicationContext;
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
@@ -55,8 +58,18 @@ public class ReviewCli implements ApplicationRunner {
                     log.info("AI review completed, posting comment.");
                     return gitHubReviewService.postReviewComment(owner, repo, prNumber, review);
                 })
-                .doOnError(e -> log.error("Failed to complete AI review for {}/{} PR #{}", owner, repo, prNumber, e))
-                .doOnSuccess(v -> log.info("AI review process finished for {}/{} PR #{}", owner, repo, prNumber))
+                .doOnError(e -> {
+                    log.error("Failed to complete AI review for {}/{} PR #{}", owner, repo, prNumber, e);
+                    shutdownApplication(1);
+                })
+                .doOnSuccess(v -> {
+                    log.info("AI review process finished for {}/{} PR #{}", owner, repo, prNumber);
+                    shutdownApplication(0);
+                })
                 .block(Duration.ofMinutes(cliProperties.timeOutMinutes()));
+    }
+
+    private void shutdownApplication(int exitCode) {
+        SpringApplication.exit(applicationContext, () -> exitCode);
     }
 }

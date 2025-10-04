@@ -1,0 +1,29 @@
+spring:
+  ai:
+    ollama:
+      base-url: http://localhost:11434
+      chat:
+        model: qwen2.5-coder:3b
+        options:
+          temperature: 0.3
+    vertex:
+      ai:
+        gemini:
+          project-id: test-project
+          location: us-central1
+          chat:
+            model: gemini-2.0-flash-001
+            options:
+              temperature: 0.3
+
+github:
+  api:
+    base-url: http://localhost:8080
+    token: test-token
+
+cli:
+  repository:
+    owner: test-owner
+    name: test-repo
+  pr-number: 123
+  time-out-minutes: 1

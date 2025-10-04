@@ -5,179 +5,190 @@ import com.code.agent.config.CliProperties;
 import com.code.agent.domain.model.Repository;
 import com.code.agent.infra.github.service.GitHubReviewService;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.DefaultApplicationArguments;
+import org.springframework.context.ConfigurableApplicationContext;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("ReviewCli")
 class ReviewCliTest {
 
     @Mock
-    AiPort aiPort;
+    private AiPort aiPort;
 
     @Mock
-    GitHubReviewService gitHubReviewService;
+    private GitHubReviewService gitHubReviewService;
 
     @Mock
-    CliProperties cliProperties = new CliProperties(new Repository("o", "r"), 1, 1);
+    private ConfigurableApplicationContext applicationContext;
 
-    @InjectMocks
-    ReviewCli reviewCli;
+    private ReviewCli reviewCli;
+    private ApplicationArguments args;
+
+    private static final String OWNER = "test-owner";
+    private static final String REPO = "test-repo";
+    private static final int PR_NUMBER = 123;
+    private static final String DIFF = "diff --git a/file.txt b/file.txt";
+    private static final String REVIEW = "AI review content";
+    private static final int TIMEOUT_MINUTES = 5;
 
     @BeforeEach
     void setUp() {
-        Repository repository = new Repository("o", "r");
-        when(cliProperties.repository()).thenReturn(repository);
-        when(cliProperties.prNumber()).thenReturn(1);
-        when(cliProperties.timeOutMinutes()).thenReturn(1);
+        Repository repository = new Repository(OWNER, REPO);
+        CliProperties cliProperties = new CliProperties(repository, PR_NUMBER, TIMEOUT_MINUTES);
+        reviewCli = new ReviewCli(aiPort, gitHubReviewService, cliProperties, applicationContext);
+        args = new DefaultApplicationArguments(new String[0]);
     }
 
-    @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    void runSuccess() throws Exception {
-        when(gitHubReviewService.hasExistingReview("o", "r", 1))
-                .thenReturn(Mono.just(false));
-        when(gitHubReviewService.fetchUnifiedDiff("o", "r", 1))
-                .thenReturn(Mono.just("diff --git a/file.txt b/file.txt"));
-        when(aiPort.evaluateDiff("diff --git a/file.txt b/file.txt"))
-                .thenReturn(Mono.just("AI Review"));
-        when(gitHubReviewService.postReviewComment("o", "r", 1, "AI Review"))
-                .thenReturn(Mono.empty());
+    @Nested
+    @DisplayName("when review succeeds")
+    class WhenReviewSucceeds {
 
-        CountDownLatch latch = new CountDownLatch(1);
-        Schedulers.boundedElastic().schedule(() -> {
-            try {
-                reviewCli.run(new DefaultApplicationArguments(new String[0]));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                latch.countDown();
-            }
-        });
+        @Test
+        @DisplayName("should complete full review process")
+        void shouldCompleteFullReviewProcess() throws Exception {
+            // given
+            given(gitHubReviewService.hasExistingReview(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(false));
+            given(gitHubReviewService.fetchUnifiedDiff(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(DIFF));
+            given(aiPort.evaluateDiff(DIFF)).willReturn(Mono.just(REVIEW));
+            given(gitHubReviewService.postReviewComment(OWNER, REPO, PR_NUMBER, REVIEW)).willReturn(Mono.empty());
 
-        assertTrue(latch.await(3, TimeUnit.SECONDS));
-        verify(gitHubReviewService).fetchUnifiedDiff("o", "r", 1);
-        verify(aiPort).evaluateDiff("diff --git a/file.txt b/file.txt");
-        verify(gitHubReviewService).postReviewComment("o", "r", 1, "AI Review");
+            // when
+            reviewCli.run(args);
+
+            // then
+            then(gitHubReviewService).should(times(1)).hasExistingReview(OWNER, REPO, PR_NUMBER);
+            then(gitHubReviewService).should(times(1)).fetchUnifiedDiff(OWNER, REPO, PR_NUMBER);
+            then(aiPort).should(times(1)).evaluateDiff(DIFF);
+            then(gitHubReviewService).should(times(1)).postReviewComment(OWNER, REPO, PR_NUMBER, REVIEW);
+        }
+
+        @Test
+        @DisplayName("should skip when review already exists")
+        void shouldSkipWhenReviewAlreadyExists() throws Exception {
+            // given
+            given(gitHubReviewService.hasExistingReview(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(true));
+
+            // when
+            reviewCli.run(args);
+
+            // then
+            then(gitHubReviewService).should(times(1)).hasExistingReview(OWNER, REPO, PR_NUMBER);
+            then(gitHubReviewService).should(never()).fetchUnifiedDiff(OWNER, REPO, PR_NUMBER);
+            then(aiPort).should(never()).evaluateDiff(DIFF);
+            then(gitHubReviewService).should(never()).postReviewComment(OWNER, REPO, PR_NUMBER, REVIEW);
+        }
+
+        @Test
+        @DisplayName("should skip when diff is empty")
+        void shouldSkipWhenDiffIsEmpty() throws Exception {
+            // given
+            given(gitHubReviewService.hasExistingReview(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(false));
+            given(gitHubReviewService.fetchUnifiedDiff(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(""));
+
+            // when
+            reviewCli.run(args);
+
+            // then
+            then(gitHubReviewService).should(times(1)).hasExistingReview(OWNER, REPO, PR_NUMBER);
+            then(gitHubReviewService).should(times(1)).fetchUnifiedDiff(OWNER, REPO, PR_NUMBER);
+            then(aiPort).should(never()).evaluateDiff(DIFF);
+            then(gitHubReviewService).should(never()).postReviewComment(OWNER, REPO, PR_NUMBER, REVIEW);
+        }
+
+        @Test
+        @DisplayName("should skip posting when AI returns empty review")
+        void shouldSkipPostingWhenAiReturnsEmptyReview() throws Exception {
+            // given
+            given(gitHubReviewService.hasExistingReview(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(false));
+            given(gitHubReviewService.fetchUnifiedDiff(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(DIFF));
+            given(aiPort.evaluateDiff(DIFF)).willReturn(Mono.just(""));
+
+            // when
+            reviewCli.run(args);
+
+            // then
+            then(gitHubReviewService).should(times(1)).hasExistingReview(OWNER, REPO, PR_NUMBER);
+            then(gitHubReviewService).should(times(1)).fetchUnifiedDiff(OWNER, REPO, PR_NUMBER);
+            then(aiPort).should(times(1)).evaluateDiff(DIFF);
+            then(gitHubReviewService).should(never()).postReviewComment(OWNER, REPO, PR_NUMBER, REVIEW);
+        }
     }
 
-    @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    void runNoDiff() throws Exception {
-        when(gitHubReviewService.hasExistingReview("o", "r", 1))
-                .thenReturn(Mono.just(false));
-        when(gitHubReviewService.fetchUnifiedDiff("o", "r", 1))
-                .thenReturn(Mono.just(""));
+    @Nested
+    @DisplayName("when review fails")
+    class WhenReviewFails {
 
-        CountDownLatch latch = new CountDownLatch(1);
-        Schedulers.boundedElastic().schedule(() -> {
-            try {
-                reviewCli.run(new DefaultApplicationArguments(new String[0]));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                latch.countDown();
-            }
-        });
+        @Test
+        @DisplayName("should handle error when fetching diff fails")
+        void shouldHandleErrorWhenFetchingDiffFails() {
+            // given
+            RuntimeException error = new RuntimeException("Failed to fetch diff");
+            given(gitHubReviewService.hasExistingReview(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(false));
+            given(gitHubReviewService.fetchUnifiedDiff(OWNER, REPO, PR_NUMBER)).willReturn(Mono.error(error));
 
-        assertTrue(latch.await(3, TimeUnit.SECONDS));
+            // when & then
+            assertThatThrownBy(() -> reviewCli.run(args))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Failed to fetch diff");
 
-        verify(aiPort, never()).evaluateDiff(anyString());
-        verify(gitHubReviewService, never()).postReviewComment(anyString(), anyString(), anyInt(), anyString());
-    }
+            then(gitHubReviewService).should(times(1)).hasExistingReview(OWNER, REPO, PR_NUMBER);
+            then(gitHubReviewService).should(times(1)).fetchUnifiedDiff(OWNER, REPO, PR_NUMBER);
+            then(aiPort).should(never()).evaluateDiff(DIFF);
+        }
 
-    @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    void runAiReturnsEmpty() throws Exception {
-        when(gitHubReviewService.hasExistingReview("o", "r", 1))
-                .thenReturn(Mono.just(false));
-        when(gitHubReviewService.fetchUnifiedDiff("o", "r", 1))
-                .thenReturn(Mono.just("diff --git a/file.txt b/file.txt"));
-        when(aiPort.evaluateDiff("diff --git a/file.txt b/file.txt"))
-                .thenReturn(Mono.just(""));
+        @Test
+        @DisplayName("should handle error when AI evaluation fails")
+        void shouldHandleErrorWhenAiEvaluationFails() {
+            // given
+            RuntimeException error = new RuntimeException("AI service unavailable");
+            given(gitHubReviewService.hasExistingReview(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(false));
+            given(gitHubReviewService.fetchUnifiedDiff(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(DIFF));
+            given(aiPort.evaluateDiff(DIFF)).willReturn(Mono.error(error));
 
-        CountDownLatch latch = new CountDownLatch(1);
-        Schedulers.boundedElastic().schedule(() -> {
-            try {
-                reviewCli.run(new DefaultApplicationArguments(new String[0]));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                latch.countDown();
-            }
-        });
+            // when & then
+            assertThatThrownBy(() -> reviewCli.run(args))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("AI service unavailable");
 
-        assertTrue(latch.await(3, TimeUnit.SECONDS));
+            then(gitHubReviewService).should(times(1)).hasExistingReview(OWNER, REPO, PR_NUMBER);
+            then(gitHubReviewService).should(times(1)).fetchUnifiedDiff(OWNER, REPO, PR_NUMBER);
+            then(aiPort).should(times(1)).evaluateDiff(DIFF);
+            then(gitHubReviewService).should(never()).postReviewComment(OWNER, REPO, PR_NUMBER, REVIEW);
+        }
 
-        verify(gitHubReviewService, never()).postReviewComment(anyString(), anyString(), anyInt(), anyString());
-    }
+        @Test
+        @DisplayName("should handle error when posting review fails")
+        void shouldHandleErrorWhenPostingReviewFails() {
+            // given
+            RuntimeException error = new RuntimeException("Failed to post comment");
+            given(gitHubReviewService.hasExistingReview(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(false));
+            given(gitHubReviewService.fetchUnifiedDiff(OWNER, REPO, PR_NUMBER)).willReturn(Mono.just(DIFF));
+            given(aiPort.evaluateDiff(DIFF)).willReturn(Mono.just(REVIEW));
+            given(gitHubReviewService.postReviewComment(OWNER, REPO, PR_NUMBER, REVIEW)).willReturn(Mono.error(error));
 
-    @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    void runPostReviewFails() throws Exception {
-        when(gitHubReviewService.hasExistingReview("o", "r", 1))
-                .thenReturn(Mono.just(false));
-        when(gitHubReviewService.fetchUnifiedDiff("o", "r", 1))
-                .thenReturn(Mono.just("diff --git a/file.txt b/file.txt"));
-        when(aiPort.evaluateDiff("diff --git a/file.txt b/file.txt"))
-                .thenReturn(Mono.just("AI Review"));
-        when(gitHubReviewService.postReviewComment("o", "r", 1, "AI Review"))
-                .thenReturn(Mono.error(new RuntimeException("GitHub API error")));
+            // when & then
+            assertThatThrownBy(() -> reviewCli.run(args))
+                    .isInstanceOf(RuntimeException.class)
+                    .hasMessage("Failed to post comment");
 
-        CountDownLatch latch = new CountDownLatch(1);
-        AtomicReference<Throwable> exception = new AtomicReference<>();
-
-        Schedulers.boundedElastic().schedule(() -> {
-            try {
-                reviewCli.run(new DefaultApplicationArguments(new String[0]));
-            } catch (Exception e) {
-                exception.set(e);
-            } finally {
-                latch.countDown();
-            }
-        });
-
-        assertTrue(latch.await(3, TimeUnit.SECONDS));
-        assertNotNull(exception.get());
-    }
-
-    @Test
-    @Timeout(value = 5, unit = TimeUnit.SECONDS)
-    void runSkipsWhenReviewAlreadyExists() throws Exception {
-        // Given: Review already exists
-        when(gitHubReviewService.hasExistingReview("o", "r", 1))
-                .thenReturn(Mono.just(true));
-
-        CountDownLatch latch = new CountDownLatch(1);
-        Schedulers.boundedElastic().schedule(() -> {
-            try {
-                reviewCli.run(new DefaultApplicationArguments(new String[0]));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            } finally {
-                latch.countDown();
-            }
-        });
-
-        assertTrue(latch.await(3, TimeUnit.SECONDS));
-
-        // Then: Should not fetch diff or call AI
-        verify(gitHubReviewService).hasExistingReview("o", "r", 1);
-        verify(gitHubReviewService, never()).fetchUnifiedDiff(anyString(), anyString(), anyInt());
-        verify(aiPort, never()).evaluateDiff(anyString());
-        verify(gitHubReviewService, never()).postReviewComment(anyString(), anyString(), anyInt(), anyString());
+            then(gitHubReviewService).should(times(1)).hasExistingReview(OWNER, REPO, PR_NUMBER);
+            then(gitHubReviewService).should(times(1)).fetchUnifiedDiff(OWNER, REPO, PR_NUMBER);
+            then(aiPort).should(times(1)).evaluateDiff(DIFF);
+            then(gitHubReviewService).should(times(1)).postReviewComment(OWNER, REPO, PR_NUMBER, REVIEW);
+        }
     }
 }
