@@ -34,8 +34,18 @@ github:
   base-url: "https://api.github.com"
   token: ${GITHUB_TOKEN}
   review-path: "/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
+  client:
+    response-timeout: 300s
+    connect-timeout: 5s
 
 ai:
+  client:
+    ollama:
+      response-timeout: 10m
+      connect-timeout: 15s
+      max-tokens: 7680
+    gemini:
+      max-tokens: 100000
   prompts:
     ollama:
       code-review-prompt: "classpath:/prompts/code-review.st"

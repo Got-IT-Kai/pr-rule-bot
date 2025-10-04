@@ -34,13 +34,10 @@ public class AiRouter {
         AiModelClient fallbackClient = aiModelClients.values().stream()
                 .filter(AiModelClient::isReady)
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("No AI client is ready for provider: " + configured));
+                .orElseThrow(() -> new IllegalStateException(
+                        "No AI client is ready for provider " + configured + " and no fallback available."));
 
-        if (fallbackClient != null) {
-            log.warn("Select Provider {} not ready. Falling back to {}.", configured, fallbackClient.modelName());
-            return fallbackClient;
-        }
-
-        throw new IllegalStateException("No AI client is ready for provider " + configured + " and no fallback available.");
+        log.warn("Selected provider {} not ready. Falling back to {}.", configured, fallbackClient.modelName());
+        return fallbackClient;
     }
 }

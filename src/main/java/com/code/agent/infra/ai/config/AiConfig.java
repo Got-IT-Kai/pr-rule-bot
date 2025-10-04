@@ -12,16 +12,19 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
-import java.time.Duration;
-
 @Configuration
 public class AiConfig {
 
     @Bean
-    public OllamaApi ollamaApi(OllamaConnectionProperties connectionProperties, RestClient.Builder restClientBuilder) {
+    public OllamaApi ollamaApi(OllamaConnectionProperties connectionProperties,
+                               AiClientProperties aiClientProperties,
+                               RestClient.Builder restClientBuilder) {
+        AiClientProperties.Ollama ollamaConfig = aiClientProperties.ollama();
+
         HttpClient httpClient = HttpClient.create()
-                .responseTimeout(Duration.ofMinutes(10))
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000)
+                .responseTimeout(ollamaConfig.responseTimeout())
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
+                        (int) ollamaConfig.connectTimeout().toMillis())
                 .followRedirect(true);
 
         WebClient.Builder webClientBuilder = WebClient.builder()
