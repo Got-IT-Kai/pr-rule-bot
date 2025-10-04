@@ -40,8 +40,20 @@ jobs:
           # Wait for Ollama service to start
           echo "Waiting for Ollama service to start..."
           timeout 30 sh -c 'until curl -s http://localhost:11434/api/tags > /dev/null; do sleep 2; done'
+          echo "Ollama service is ready!"
 
-          echo "Ollama is ready!"
+          # Verify model is available
+          echo "Checking if model is available..."
+          MODELS=$(curl -s http://localhost:11434/api/tags | jq -r '.models[].name')
+          echo "Available models: $MODELS"
+
+          if ! echo "$MODELS" | grep -q "qwen2.5-coder:7b"; then
+            echo "ERROR: qwen2.5-coder:7b model not found!"
+            docker logs ollama-ci
+            exit 1
+          fi
+
+          echo "Model qwen2.5-coder:7b is ready!"
           docker logs ollama-ci
 
       - name: Grant execute permission for gradlew
