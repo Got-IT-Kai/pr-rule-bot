@@ -29,28 +29,20 @@ jobs:
           java-version: '21'
           cache: gradle
 
-      - name: Install Docker Compose
+      - name: Start Ollama with pre-built image
         run: |
-          # GitHub Actions Ubuntu runners come with Docker but not always docker-compose
-          if ! command -v docker-compose &> /dev/null; then
-            echo "Installing docker-compose..."
-            sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-            sudo chmod +x /usr/local/bin/docker-compose
-          fi
-          docker-compose --version
+          # Pull pre-built image with model included from GHCR
+          docker pull ghcr.io/got-it-kai/pr-rule-bot-ollama:7b
 
-      - name: Start Ollama with Docker Compose
-        env:
-          OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL || 'qwen2.5-coder:7b' }}
-        run: |
-          docker-compose -f docker-compose.ci.yml up -d
+          # Run Ollama container
+          docker run -d --name ollama-ci -p 11434:11434 ghcr.io/got-it-kai/pr-rule-bot-ollama:7b
 
-          # Wait for Ollama to be ready
-          echo "Waiting for Ollama to be ready..."
-          timeout 300 sh -c 'until docker-compose -f docker-compose.ci.yml exec -T ollama curl -s http://localhost:11434/api/tags > /dev/null; do sleep 2; done'
+          # Wait for Ollama service to start
+          echo "Waiting for Ollama service to start..."
+          timeout 30 sh -c 'until curl -s http://localhost:11434/api/tags > /dev/null; do sleep 2; done'
 
           echo "Ollama is ready!"
-          docker-compose -f docker-compose.ci.yml logs ollama
+          docker logs ollama-ci
 
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
@@ -62,11 +54,11 @@ jobs:
           REPO_OWNER: ${{ github.repository_owner }}
           REPO_NAME: ${{ github.event.repository.name }}
           AI_PROVIDER: ollama
-          OLLAMA_MODEL: ${{ vars.OLLAMA_MODEL || 'qwen2.5-coder:7b' }}
+          OLLAMA_MODEL: qwen2.5-coder:7b
           SPRING_PROFILES_ACTIVE: cli,ci
         run: |
           ./gradlew bootRun --args="cli" --no-daemon
 
       - name: Stop Ollama
         if: always()
-        run: docker-compose -f docker-compose.ci.yml down -v
+        run: docker stop ollama-ci && docker rm ollama-ci
