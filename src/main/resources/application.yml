@@ -43,7 +43,7 @@ ai:
     ollama:
       response-timeout: 10m
       connect-timeout: 15s
-      max-tokens: 7680
+      max-tokens: 32768  # qwen2.5-coder and other modern models support 32K+
     gemini:
       max-tokens: 100000
   prompts:
@@ -53,7 +53,7 @@ ai:
     gemini:
       code-review-prompt: "classpath:/prompts/code-review.st"
       review-merge-prompt: "classpath:/prompts/review-merge.st"
-  provider: gemini
+  provider: ${AI_PROVIDER:ollama}
 
 cli:
   pr-number: ${PR_NUMBER:0}

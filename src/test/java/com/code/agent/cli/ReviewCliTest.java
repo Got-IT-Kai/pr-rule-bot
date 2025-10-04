@@ -48,6 +48,8 @@ class ReviewCliTest {
     @Test
     @Timeout(value = 5, unit = TimeUnit.SECONDS)
     void runSuccess() throws Exception {
+        when(gitHubReviewService.hasExistingReview("o", "r", 1))
+                .thenReturn(Mono.just(false));
         when(gitHubReviewService.fetchUnifiedDiff("o", "r", 1))
                 .thenReturn(Mono.just("diff --git a/file.txt b/file.txt"));
         when(aiPort.evaluateDiff("diff --git a/file.txt b/file.txt"))
@@ -75,6 +77,8 @@ class ReviewCliTest {
     @Test
     @Timeout(value = 5, unit = TimeUnit.SECONDS)
     void runNoDiff() throws Exception {
+        when(gitHubReviewService.hasExistingReview("o", "r", 1))
+                .thenReturn(Mono.just(false));
         when(gitHubReviewService.fetchUnifiedDiff("o", "r", 1))
                 .thenReturn(Mono.just(""));
 
@@ -98,6 +102,8 @@ class ReviewCliTest {
     @Test
     @Timeout(value = 5, unit = TimeUnit.SECONDS)
     void runAiReturnsEmpty() throws Exception {
+        when(gitHubReviewService.hasExistingReview("o", "r", 1))
+                .thenReturn(Mono.just(false));
         when(gitHubReviewService.fetchUnifiedDiff("o", "r", 1))
                 .thenReturn(Mono.just("diff --git a/file.txt b/file.txt"));
         when(aiPort.evaluateDiff("diff --git a/file.txt b/file.txt"))
@@ -122,6 +128,8 @@ class ReviewCliTest {
     @Test
     @Timeout(value = 5, unit = TimeUnit.SECONDS)
     void runPostReviewFails() throws Exception {
+        when(gitHubReviewService.hasExistingReview("o", "r", 1))
+                .thenReturn(Mono.just(false));
         when(gitHubReviewService.fetchUnifiedDiff("o", "r", 1))
                 .thenReturn(Mono.just("diff --git a/file.txt b/file.txt"));
         when(aiPort.evaluateDiff("diff --git a/file.txt b/file.txt"))
@@ -144,7 +152,32 @@ class ReviewCliTest {
 
         assertTrue(latch.await(3, TimeUnit.SECONDS));
         assertNotNull(exception.get());
-
     }
 
+    @Test
+    @Timeout(value = 5, unit = TimeUnit.SECONDS)
+    void runSkipsWhenReviewAlreadyExists() throws Exception {
+        // Given: Review already exists
+        when(gitHubReviewService.hasExistingReview("o", "r", 1))
+                .thenReturn(Mono.just(true));
+
+        CountDownLatch latch = new CountDownLatch(1);
+        Schedulers.boundedElastic().schedule(() -> {
+            try {
+                reviewCli.run(new DefaultApplicationArguments(new String[0]));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            } finally {
+                latch.countDown();
+            }
+        });
+
+        assertTrue(latch.await(3, TimeUnit.SECONDS));
+
+        // Then: Should not fetch diff or call AI
+        verify(gitHubReviewService).hasExistingReview("o", "r", 1);
+        verify(gitHubReviewService, never()).fetchUnifiedDiff(anyString(), anyString(), anyInt());
+        verify(aiPort, never()).evaluateDiff(anyString());
+        verify(gitHubReviewService, never()).postReviewComment(anyString(), anyString(), anyInt(), anyString());
+    }
 }

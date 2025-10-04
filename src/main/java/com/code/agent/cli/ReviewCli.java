@@ -32,12 +32,16 @@ public class ReviewCli implements ApplicationRunner {
 
         log.info("AI review started for {}/{} PR #{}", owner, repo, prNumber);
 
-        gitHubReviewService.fetchUnifiedDiff(owner, repo, prNumber)
+        // Check if review already exists to prevent duplicate API calls
+        gitHubReviewService.hasExistingReview(owner, repo, prNumber)
+                .flatMap(hasReview -> {
+                    if (hasReview) {
+                        log.info("Review already exists for {}/{} PR #{}, skipping to prevent duplicate", owner, repo, prNumber);
+                        return Mono.empty();
+                    }
+                    return gitHubReviewService.fetchUnifiedDiff(owner, repo, prNumber);
+                })
                 .filter(StringUtils::hasText)
-                .switchIfEmpty(Mono.defer(() -> {
-                    log.warn("No diff found for {}/{} PR #{}", owner, repo, prNumber);
-                    return Mono.empty();
-                }))
                 .flatMap(diff -> {
                     log.info("Diff fetched, starting AI review.");
                     return aiPort.evaluateDiff(diff);
