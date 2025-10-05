@@ -1,7 +1,28 @@
 # ADR-0005: Rate Limiting Strategy
 
 **Date:** 2025-10-05
-**Status:** Proposed
+**Status:** Deferred to v2.0
+
+## v1.0 Deferral Decision
+
+**Reasoning:** This feature is deferred to v2.0 because it represents overengineering for the current single-user personal project context.
+
+**Why not needed for v1.0:**
+- Single-user deployment: No risk of multi-user abuse
+- Manual monitoring: AI API costs can be monitored through GCP console
+- GitHub rate limits: GitHub itself already rate-limits webhook events
+- Simple retry: Backpressure from reactive streams provides natural throttling
+- No public endpoint: Bot runs privately, not exposed to internet abuse
+
+**When to reconsider (v2.0):**
+- Multi-user/organization deployment
+- Public webhook endpoint
+- Unpredictable traffic patterns
+- Need for cost enforcement policies
+
+See original analysis below for future reference.
+
+---
 
 ## Context
 
@@ -174,9 +195,45 @@ Track:
 7. Perform load testing and tune thresholds
 8. Gradual production rollout with monitoring
 
+## v1.0 Update: Defer to v2.0
+
+**Date:** 2025-10-05
+**Decision:** Defer rate limiting implementation to v2.0
+
+**Rationale:**
+- **Personal project context:** Single user (individual developer), not multi-tenant
+- **No cost abuse risk:** User has full control over repository activity
+- **Overengineering for v1.0:** Redis-backed distributed rate limiting unnecessary for single instance
+- **Kafka handles performance:** v2.0 Kafka migration provides natural backpressure for system protection
+- **Rate limiting purpose reassessment:**
+  - Performance protection → Kafka backpressure sufficient
+  - Cost control → Only needed for multi-user/multi-tenant scenarios
+
+**When rate limiting becomes necessary:**
+- Open source public deployment (multiple users/repositories)
+- Multi-tenant SaaS offering
+- User-specific quota management required
+
+**v1.0 Approach:**
+- Rely on responsible usage (personal project)
+- Monitor AI API costs manually
+- No rate limiting implementation
+
+**v2.0 Consideration:**
+- If opening to public use: Implement per-user/per-repository quotas
+- Use in-memory Bucket4j for single instance
+- Add Redis only when scaling to multiple instances
+- Integrate with Kafka consumer throttling
+
+**Alternative for v1.0 (if needed):**
+- Simple in-memory rate limiting with Bucket4j (no Redis)
+- Webhook endpoint protection only
+- No distributed state management
+
 ## References
 
 - [Bucket4j Documentation](https://bucket4j.com/)
 - [Token Bucket Algorithm](https://en.wikipedia.org/wiki/Token_bucket)
 - Code Review Report: [2025-10-05 Comprehensive Review](../code-review/2025-10-05-comprehensive-review.md#ci-2-missing-rate-limiting-high)
 - Related: [ADR-0003: Webhook Security](./0003-webhook-security.md)
+- Related: [v1.0 Release Plan](../release/v1.0-plan.md)
