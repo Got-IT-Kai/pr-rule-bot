@@ -17,7 +17,7 @@ spring:
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
       chat:
-        model: llama3:8b-instruct-q8_0
+        model: ${OLLAMA_MODEL:qwen2.5-coder:3b}
         options:
           temperature: 0.2
     vertex:
@@ -43,7 +43,7 @@ ai:
     ollama:
       response-timeout: 10m
       connect-timeout: 15s
-      max-tokens: 7680
+      max-tokens: 8192  # qwen2.5-coder:3b - balanced token limit for code review
     gemini:
       max-tokens: 100000
   prompts:
@@ -53,7 +53,7 @@ ai:
     gemini:
       code-review-prompt: "classpath:/prompts/code-review.st"
       review-merge-prompt: "classpath:/prompts/review-merge.st"
-  provider: gemini
+  provider: ${AI_PROVIDER:ollama}
 
 cli:
   pr-number: ${PR_NUMBER:0}

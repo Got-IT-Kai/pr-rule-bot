@@ -1,0 +1,18 @@
+# CI environment configuration with Docker Compose Ollama
+
+spring:
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        model: ${OLLAMA_MODEL:qwen2.5-coder:7b}
+        options:
+          temperature: 0.2
+
+ai:
+  provider: ollama
+  client:
+    ollama:
+      response-timeout: 30m  # Ollama on CPU is slow, allow more time
+      connect-timeout: 30s
+      max-tokens: 32768  # qwen2.5-coder has 32K context window
