@@ -193,21 +193,25 @@ All major technical decisions are documented as [Architecture Decision Records](
    # Get your API key from: https://aistudio.google.com/app/apikey
    # Pros: Simple setup, free tier available
    # Cons: Lower rate limits (15 req/min), API key in environment
-   GOOGLE_GEMINI_API_KEY=AIza_your_api_key_here
+   # WARNING: For production, use secrets manager (e.g., GCP Secret Manager)
+   GOOGLE_GEMINI_API_KEY=YOUR_API_KEY_HERE
+   AI_PROVIDER=gemini
 
    # Option 2: GCP Vertex AI with Workload Identity (Production - Recommended)
    # Requires GCP project and Workload Identity Federation setup
    # See: docs/lessons/04-gcp-workload-identity-federation-setup.md
+   # Pricing: https://cloud.google.com/vertex-ai/pricing
    # Pros: Secure OIDC authentication, higher rate limits, no API key exposure
    # Cons: More complex setup
    GCP_PROJECT_ID=your-gcp-project-id
    GCP_LOCATION=us-central1
+   AI_PROVIDER=gemini
    # Note: No API key needed - uses WIF authentication in CI/CD
 
    # Option 3: Local Ollama (Privacy-focused - No API key needed)
    # Run LLM locally without cloud dependencies
    OLLAMA_BASE_URL=http://localhost:11434
-   OLLAMA_MODEL=llama3.1:8b
+   OLLAMA_MODEL=llama3  # or llama2, qwen2.5-coder:3b, etc.
    AI_PROVIDER=ollama
    ```
 
@@ -424,19 +428,21 @@ logging:
 
 The bot supports multiple AI providers through Spring AI abstractions:
 
-| Provider | Setup Complexity | Pros | Cons | Use Case |
-|----------|------------------|------|------|----------|
-| **Google AI Studio API Key** | ⭐ Easy | Free tier, simple setup, fast | Lower rate limits (15 req/min), API key exposure risk | Quick testing, development |
-| **GCP Vertex AI (WIF)** | ⭐⭐⭐ Complex | Secure OIDC auth, high rate limits, no API key exposure, production-ready | Requires GCP project setup, WIF configuration | Production deployments, CI/CD |
-| **Ollama (Local)** | ⭐⭐ Medium | Privacy, no API costs, offline, no rate limits | Slower, requires GPU/resources, local setup | Development, sensitive code, air-gapped environments |
-| **OpenAI** *(extensible)* | ⭐ Easy | Industry standard, GPT-4 quality | Higher cost, rate limits, requires API key | Premium quality needs |
+| Provider | Setup Complexity | Rate Limits | Pros | Cons | Use Case |
+|----------|------------------|-------------|------|------|----------|
+| **Google AI Studio API Key** | ⭐ Easy | 15 req/min (free tier) | Free tier, simple setup, fast | API key exposure risk, lower rate limits | Quick testing, development |
+| **GCP Vertex AI (WIF)** | ⭐⭐⭐ Complex | [Quota limits](https://cloud.google.com/vertex-ai/docs/quotas) | Secure OIDC auth, high rate limits, no API key exposure, production-ready | Complex setup, requires GCP project | Production deployments, CI/CD |
+| **Ollama (Local)** | ⭐⭐ Medium | None (local) | Privacy, no API costs, offline, no rate limits | Slower, requires GPU/resources, local setup | Development, sensitive code, air-gapped environments |
+| **OpenAI** *(extensible)* | ⭐ Easy | [Tier-based](https://platform.openai.com/docs/guides/rate-limits) | Industry standard, GPT-4 quality | Higher cost, requires API key | Premium quality needs |
 
 **Setup Guides:**
 - **Google AI Studio**: Get API key from [Google AI Studio](https://aistudio.google.com/app/apikey)
-- **GCP Vertex AI**: See [Workload Identity Federation Setup](docs/lessons/04-gcp-workload-identity-federation-setup.md)
+- **GCP Vertex AI**: See [Workload Identity Federation Setup](docs/lessons/04-gcp-workload-identity-federation-setup.md) and [Pricing](https://cloud.google.com/vertex-ai/pricing)
 - **Ollama**: See "Local Development with Ollama" section above
 
-Configure provider in `application.yml` or via environment variables (`AI_PROVIDER=gemini|ollama`).
+**Configuration:**
+- Set provider in `application.yml` using `ai.provider` property
+- Or use environment variable: `AI_PROVIDER=gemini` or `AI_PROVIDER=ollama`
 
 ---
 
