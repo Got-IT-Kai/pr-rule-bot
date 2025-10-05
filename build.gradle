@@ -62,9 +62,6 @@ dependencyManagement {
     }
 }
 
-bootRun {
-    jvmArgs += ["-javaagent:${project.rootDir}/otel/opentelemetry-javaagent.jar"]
-}
 
 testing {
     suites {
