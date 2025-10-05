@@ -3,6 +3,27 @@
 **Date:** 2025-10-05
 **Status:** Deferred to v2.0
 
+## v1.0 Deferral Decision
+
+**Reasoning:** This feature is deferred to v2.0 because it represents overengineering for the current single-user personal project context.
+
+**Why not needed for v1.0:**
+- Single-user deployment: No risk of multi-user abuse
+- Manual monitoring: AI API costs can be monitored through GCP console
+- GitHub rate limits: GitHub itself already rate-limits webhook events
+- Simple retry: Backpressure from reactive streams provides natural throttling
+- No public endpoint: Bot runs privately, not exposed to internet abuse
+
+**When to reconsider (v2.0):**
+- Multi-user/organization deployment
+- Public webhook endpoint
+- Unpredictable traffic patterns
+- Need for cost enforcement policies
+
+See original analysis below for future reference.
+
+---
+
 ## Context
 
 The application currently has no rate limiting on webhook endpoints or AI API calls, creating multiple vulnerabilities:

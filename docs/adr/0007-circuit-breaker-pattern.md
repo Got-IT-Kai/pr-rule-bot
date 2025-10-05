@@ -3,6 +3,46 @@
 **Date:** 2025-10-05
 **Status:** Deferred to v2.0
 
+## v1.0 Deferral Decision
+
+**Reasoning:** Circuit breaker pattern is deferred to v2.0 because it represents overengineering for the current single-user personal project context.
+
+**v1.0 Approach (Simple Resilience):**
+- Rely on Spring WebClient built-in retry mechanisms
+- Configure reasonable timeouts (GitHub: 30s, AI: 10min)
+- Use reactive error handling (`onErrorResume`, `retry`)
+- Manual monitoring of failure patterns
+- GitHub Actions workflow timeout as safety net
+
+**Why circuit breaker not needed for v1.0:**
+- Single-user: No cascading failure risk to multiple users
+- Low volume: Manual retry acceptable for occasional failures
+- Reactive backpressure: Project Reactor handles slow responses naturally
+- Simple error handling: Retry with exponential backoff sufficient
+- No SLA requirements: Personal project tolerates transient failures
+
+**When to reconsider (v2.0):**
+- Multi-user deployment with SLA requirements
+- High-availability production environment
+- Need for automatic failover between AI providers
+- Resource exhaustion issues from retry storms
+- Requirement for graceful degradation with fallback strategies
+
+**v1.0 Sufficient Resilience:**
+```java
+// Simple retry with backoff (already implemented)
+webClient.get()
+    .retrieve()
+    .bodyToMono(String.class)
+    .timeout(Duration.ofSeconds(30))
+    .retry(3)
+    .onErrorResume(e -> Mono.empty());
+```
+
+See original comprehensive circuit breaker design below for v2.0 reference.
+
+---
+
 ## Context
 
 The application makes synchronous calls to external services without fault tolerance mechanisms:

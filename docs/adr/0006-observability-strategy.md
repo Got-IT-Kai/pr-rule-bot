@@ -1,7 +1,41 @@
 # ADR-0006: Observability Strategy with OpenTelemetry
 
 **Date:** 2025-10-05
-**Status:** Proposed
+**Status:** Deferred to v2.0
+
+## v1.0 Deferral Decision
+
+**Reasoning:** Comprehensive OpenTelemetry observability is deferred to v2.0 due to setup complexity and infrastructure overhead for a personal project.
+
+**v1.0 Approach (Minimal Observability):**
+- Remove OTEL dependencies causing connection errors
+- Rely on structured logging with SLF4J and Logback
+- Use Spring Boot Actuator metrics (basic)
+- Monitor via application logs and GitHub Actions output
+- Use SonarCloud for code quality metrics
+
+**Why comprehensive OTEL not needed for v1.0:**
+- Personal project: Can debug locally with logs
+- Low traffic: No need for distributed tracing
+- CI visibility: GitHub Actions logs sufficient for now
+- Cost: No infrastructure budget for Tempo/Jaeger/Grafana
+- Complexity: OTEL setup requires significant time investment
+
+**When to reconsider (v2.0):**
+- Production deployment with real users
+- Performance issues requiring detailed tracing
+- Need for cost analysis and optimization
+- Multi-service architecture
+- Budget for observability infrastructure (GCP Cloud Trace, etc.)
+
+**v1.0 Action Items:**
+- Remove `otel/opentelemetry-javaagent.jar` configuration from `build.gradle`
+- Keep basic Spring Boot Actuator metrics
+- Maintain structured logging
+
+See original comprehensive strategy below for v2.0 reference.
+
+---
 
 ## Context
 

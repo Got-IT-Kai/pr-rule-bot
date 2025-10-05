@@ -1,7 +1,7 @@
 # PR Rule Bot
 
 [![Build Status](https://img.shields.io/github/actions/workflow/status/Got-IT-Kai/pr-rule-bot/ai-code-review.yml?branch=master)](https://github.com/Got-IT-Kai/pr-rule-bot/actions)
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Got-IT-Kai_pr-rule-bot&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Got-IT-Kai_pr-rule-bot)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Got-IT-Kai_pr-rule-bot&metric=alert_status)](https://sonarcloud.io/dashboard?id=Got-IT-Kai_pr-rule-bot)
 [![Coverage](https://sonarcloud.io/api/project_badges/measure?project=Got-IT-Kai_pr-rule-bot&metric=coverage)](https://sonarcloud.io/summary/new_code?id=Got-IT-Kai_pr-rule-bot)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Java](https://img.shields.io/badge/Java-21-orange.svg)](https://openjdk.org/projects/jdk/21/)

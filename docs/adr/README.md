@@ -14,15 +14,58 @@ Each ADR follows this structure:
 # ADR-XXX: [Title]
 
 **Date:** YYYY-MM-DD
-**Status:** [Proposed | Accepted | Deprecated | Superseded]
+**Status:** [Proposed | Accepted | Implemented | Deprecated | Superseded | Deferred to vX.X]
+
+<!-- If status is "Deferred", add the Deferral Decision section below -->
+
+## v1.0 Deferral Decision (Optional - only if deferred)
+
+**Reasoning:** Brief explanation of why this decision is deferred.
+
+**Current Approach (vX.X):**
+- What simple/minimal solution is being used instead
+- What existing mechanisms provide partial coverage
+
+**Why not needed for vX.X:**
+- Context-specific reason (e.g., single-user, personal project)
+- Cost/complexity vs benefit analysis
+- Existing alternatives that are "good enough"
+
+**When to reconsider (vX.Y):**
+- Specific triggers or conditions
+- Scale thresholds (e.g., multi-user, high traffic)
+- Business requirements (e.g., SLA, compliance)
+
+**vX.X Action Items (if applicable):**
+- Specific steps to take for the deferred version
+- What to keep/remove
+
+See original comprehensive strategy below for future reference.
+
+---
 
 ## Context
 
 What is the issue that we're seeing that is motivating this decision or change?
 
+**Key points to cover:**
+- Problem statement and current limitations
+- Why this matters
+- Impact if not addressed
+- Related Issue/Component links
+
 ## Decision
 
 What is the change that we're proposing and/or doing?
+
+**Be specific about:**
+- What approach was chosen
+- Key design choices
+- High-level architecture/flow
+
+**Avoid:**
+- Implementation code details (save for implementation guide)
+- Step-by-step instructions
 
 ## Consequences
 
@@ -45,15 +88,26 @@ What other options were evaluated?
 - Pros/Cons
 - Why rejected
 
+### Alternative 2: [Name]
+- Description
+- Pros/Cons
+- Why rejected
+
 ## Implementation
 
-How will this decision be implemented?
+How will this decision be implemented at a high level?
+
+**Key components:**
+- Component 1: Purpose and responsibility
+- Component 2: Purpose and responsibility
+
+**Note:** Detailed implementation steps should go in `/docs/implementation/` directory.
 
 ## References
 
-- Related ADRs
-- External resources
-- Related issues/PRs
+- Related ADRs: [ADR-XXXX](./XXXX-title.md)
+- External resources: [Name](URL)
+- Related issues/PRs: [#123](https://github.com/Got-IT-Kai/pr-rule-bot/issues/123)
 ```
 
 ## ADR Index
@@ -188,12 +242,22 @@ Skip ADR for implementation tasks with obvious solutions:
 ## Creating a New ADR
 
 1. Verify ADR is needed (use decision tree above)
-2. Copy the template from this document
+2. Copy the template structure from the "ADR Format" section above
 3. Number sequentially (0001, 0002, etc.)
-4. Fill in all sections
-5. Create PR for review
-6. Update this index
-7. Link to related code reviews or issues
+4. Create file: `XXXX-descriptive-name.md`
+5. Fill in all sections:
+   - Remove optional sections if not applicable
+   - If status is "Deferred to vX.X", include the "Deferral Decision" section
+   - Provide clear reasoning for deferral and alternative approach
+6. Create PR for review
+7. Update this ADR Index
+8. Link to related code reviews or issues
+
+**For Deferred ADRs:**
+- Always include the comprehensive original strategy for future reference
+- Clearly state what simple approach is being used instead
+- Define specific conditions for when to reconsider
+- Examples: ADR-0005, ADR-0006, ADR-0007
 
 ### Updating Existing ADRs
 

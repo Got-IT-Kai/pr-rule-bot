@@ -12,31 +12,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 First production release focusing on core AI-powered code review functionality with security and stability improvements.
 
 #### Security Hardening (Critical Priority)
-- [#36](https://github.com/Got-IT-Kai/pr-rule-bot/issues/36) Implement webhook signature verification
-- [#37](https://github.com/Got-IT-Kai/pr-rule-bot/issues/37) Prevent GitHub token from appearing in logs
-- [#38](https://github.com/Got-IT-Kai/pr-rule-bot/issues/38) Add AI prompt injection protection
+- Implement webhook signature verification ([#36])
+- Prevent GitHub token from appearing in logs ([#37])
+- Add AI prompt injection protection ([#38])
 
 #### Core Bug Fixes (High Priority)
-- [#39](https://github.com/Got-IT-Kai/pr-rule-bot/issues/39) Fix bot identity management preventing bot reviews
-- [#40](https://github.com/Got-IT-Kai/pr-rule-bot/issues/40) Fix memory leak in large PR processing
-- [#41](https://github.com/Got-IT-Kai/pr-rule-bot/issues/41) Fix event publisher blocking in reactive pipeline
+- Fix bot identity management preventing bot reviews ([#39])
+- Fix memory leak in large PR processing ([#40])
+- Fix event publisher blocking in reactive pipeline ([#41])
 
 #### Smart Token Chunking (High Priority)
-- [#42](https://github.com/Got-IT-Kai/pr-rule-bot/issues/42) Implement smart token chunking for large files
+- Implement smart token chunking for large files ([#42])
 
 #### Infrastructure Cleanup (Medium Priority)
-- [#43](https://github.com/Got-IT-Kai/pr-rule-bot/issues/43) Remove OTEL dependencies and configuration
-- [#44](https://github.com/Got-IT-Kai/pr-rule-bot/issues/44) Remove unused vector database dependencies
+- Remove OTEL dependencies and configuration ([#43])
+- Remove unused vector database dependencies ([#44])
 
 #### Test Coverage (High Priority)
-- [#45](https://github.com/Got-IT-Kai/pr-rule-bot/issues/45) Improve AI adapter test coverage (43% → 80%)
-- [#46](https://github.com/Got-IT-Kai/pr-rule-bot/issues/46) Add webhook controller integration tests (10% → 80%)
-- [#47](https://github.com/Got-IT-Kai/pr-rule-bot/issues/47) Add GitHub event model tests (13% → 80%)
+- Improve AI adapter test coverage (43% → 80%) ([#45])
+- Add webhook controller integration tests (10% → 80%) ([#46])
+- Add GitHub event model tests (13% → 80%) ([#47])
 
 #### Code Quality (Low Priority)
-- [#48](https://github.com/Got-IT-Kai/pr-rule-bot/issues/48) Add JavaDoc documentation for public APIs
-- [#49](https://github.com/Got-IT-Kai/pr-rule-bot/issues/49) Extract magic numbers to named constants
-- [#50](https://github.com/Got-IT-Kai/pr-rule-bot/issues/50) Remove wildcard imports from test files
+- Add JavaDoc documentation for public APIs ([#48])
+- Extract magic numbers to named constants ([#49])
+- Remove wildcard imports from test files ([#50])
 
 #### Deferred to v2.0
 - Rate Limiting (ADR-0005) - Not needed for single-user personal project
@@ -44,12 +44,12 @@ First production release focusing on core AI-powered code review functionality w
 - OTEL Observability (ADR-0006) - Comprehensive observability deferred
 
 #### Architecture Decisions
-- [ADR-0003](docs/adr/0003-webhook-security.md) - Webhook Security
-- [ADR-0004](docs/adr/0004-bot-identity-management.md) - Bot Identity Management
-- [ADR-0005](docs/adr/0005-rate-limiting.md) - Rate Limiting Strategy (Deferred)
-- [ADR-0006](docs/adr/0006-observability-strategy.md) - Observability Strategy (Deferred)
-- [ADR-0007](docs/adr/0007-circuit-breaker-pattern.md) - Circuit Breaker Pattern (Deferred)
-- [ADR-0008](docs/adr/0008-token-chunking-strategy.md) - Token Chunking Strategy
+- [ADR-0003] - Webhook Security
+- [ADR-0004] - Bot Identity Management
+- [ADR-0005] - Rate Limiting Strategy (Deferred to v2.0)
+- [ADR-0006] - Observability Strategy (Deferred to v2.0)
+- [ADR-0007] - Circuit Breaker Pattern (Deferred to v2.0)
+- [ADR-0008] - Token Chunking Strategy
 
 ---
 
@@ -75,4 +75,30 @@ First production release focusing on core AI-powered code review functionality w
 ### Security
 - Security improvements and fixes
 
+<!-- Issue References -->
+[#36]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/36
+[#37]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/37
+[#38]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/38
+[#39]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/39
+[#40]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/40
+[#41]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/41
+[#42]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/42
+[#43]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/43
+[#44]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/44
+[#45]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/45
+[#46]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/46
+[#47]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/47
+[#48]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/48
+[#49]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/49
+[#50]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/50
+
+<!-- ADR References -->
+[ADR-0003]: docs/adr/0003-webhook-security.md
+[ADR-0004]: docs/adr/0004-bot-identity-management.md
+[ADR-0005]: docs/adr/0005-rate-limiting.md
+[ADR-0006]: docs/adr/0006-observability-strategy.md
+[ADR-0007]: docs/adr/0007-circuit-breaker-pattern.md
+[ADR-0008]: docs/adr/0008-token-chunking-strategy.md
+
+<!-- Version Comparison Links -->
 [Unreleased]: https://github.com/Got-IT-Kai/pr-rule-bot/compare/master...HEAD
