@@ -188,10 +188,35 @@ Track:
 - Missing spans in critical paths
 - Performance regression in CI artifacts
 
+## v1.0 Update: Defer OTEL to v2.0
+
+**Date:** 2025-10-05
+**Decision:** Remove OpenTelemetry from v1.0 release
+
+**Rationale:**
+- OTEL configuration errors blocking development
+- v1.0 focuses on core functionality stabilization
+- Observability infrastructure adds significant complexity
+- Can rely on basic logging and metrics for v1.0
+- Full observability stack better suited for v2.0 after core stability
+
+**v1.0 Actions:**
+1. Remove OTEL Java agent from build.gradle
+2. Remove OTEL configuration from application.yml
+3. Clean up OTEL-related errors in logs
+4. Document decision in v1.0 release notes
+
+**v2.0 Plan:**
+- Revisit full OTEL implementation per this ADR
+- Implement environment-specific configuration
+- Set up observability infrastructure (Tempo, Prometheus, Grafana)
+- Enable distributed tracing for production
+
 ## References
 
 - [OpenTelemetry Java](https://opentelemetry.io/docs/instrumentation/java/)
 - [Grafana Tempo](https://grafana.com/docs/tempo/latest/)
 - [Prometheus](https://prometheus.io/docs/)
 - Related: [ADR-0001: Non-Blocking I/O](./0001-non-blocking-io.md)
-- Design Document: [Observability Architecture](../design/observability-architecture.md) (to be created)
+- Related: [v1.0 Release Plan](../release/v1.0-plan.md)
+- Design Document: [Observability Architecture](../design/observability-architecture.md) (deferred to v2.0)
