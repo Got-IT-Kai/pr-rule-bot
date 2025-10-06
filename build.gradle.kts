@@ -16,6 +16,7 @@ sonar {
         property("sonar.organization", "got-it-kai")
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/jacocoMergeReport/jacocoMergeReport.xml")
+        property("sonar.junit.reportPaths", "build/test-results/test,build/test-results/integrationTest")
         // Exclude GitHub Actions workflows from analysis
         property("sonar.exclusions", ".github/workflows/**")
     }
@@ -133,6 +134,9 @@ tasks.named<JacocoReport>("jacocoTestReport") {
 }
 
 tasks.register<JacocoReport>("jacocoMergeReport") {
+    group = "verification"
+    description = "Generates merged Jacoco coverage report for unit and integration tests"
+
     dependsOn(tasks.test, tasks.named("integrationTest"))
 
     executionData(fileTree(layout.buildDirectory.dir("jacoco")) {
