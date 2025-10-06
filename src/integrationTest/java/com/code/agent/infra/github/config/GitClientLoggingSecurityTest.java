@@ -27,6 +27,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class GitClientLoggingSecurityTest {
 
+    private static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration RESPONSE_TIMEOUT = Duration.ofSeconds(5);
+    private static final String TEST_PATH = "/test";
+    private static final String TEST_API_PATH = "/api/test";
+
     private MockWebServer mockWebServer;
     private ListAppender<ILoggingEvent> listAppender;
     private Logger nettyLogger;
@@ -54,17 +59,17 @@ class GitClientLoggingSecurityTest {
     }
 
     @Test
-    void reactorNettyHttpClient_ShouldNotLogAuthorizationHeader_WhenWiretapEnabled() {
-        // Given: Dummy token that should NOT appear in logs
+    void shouldNotLogAuthorizationHeaderWhenWiretapEnabled() {
+        // Given: WebClient with wiretap enabled
         String dummyToken = "secret-token-MUST-NOT-APPEAR-IN-LOGS";
         GitHubProperties.Client clientConfig = new GitHubProperties.Client(
-                Duration.ofSeconds(10),
-                Duration.ofSeconds(5)
+                CONNECT_TIMEOUT,
+                RESPONSE_TIMEOUT
         );
         GitHubProperties properties = new GitHubProperties(
                 mockWebServer.url("/").toString(),
                 dummyToken,
-                "/test",
+                TEST_PATH,
                 clientConfig
         );
 
@@ -72,10 +77,9 @@ class GitClientLoggingSecurityTest {
                 .setResponseCode(200)
                 .setBody("{\"message\":\"success\"}"));
 
-        // When: Create WebClient with wiretap enabled (to force HTTP logging)
         HttpClient httpClient = HttpClient.create()
                 .followRedirect(true)
-                .wiretap(true)  // Enable wire logging for testing
+                .wiretap(true)
                 .responseTimeout(clientConfig.responseTimeout());
 
         WebClient webClient = WebClient.builder()
@@ -90,73 +94,72 @@ class GitClientLoggingSecurityTest {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
 
-        // Execute HTTP request
+        // When: Execute HTTP request
         webClient.get()
-                .uri("/test")
+                .uri(TEST_PATH)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
 
-        // Then: Verify token does NOT appear in captured logs
+        // Then: Token should not appear in any log message
         List<String> logMessages = listAppender.list.stream()
                 .map(ILoggingEvent::getFormattedMessage)
-                .collect(Collectors.toList());
+                .toList();
 
         // Security check: Token should not be logged
         assertThat(logMessages)
-                .as("Authorization token should not appear in any log messages")
+                .as("Authorization token and Bearer prefix should not appear in any log messages")
                 .noneSatisfy(message ->
-                        assertThat(message).doesNotContain(dummyToken)
-                );
-
-        assertThat(logMessages)
-                .as("Bearer token should not appear in any log messages")
-                .noneSatisfy(message ->
-                        assertThat(message).doesNotContain("Bearer " + dummyToken)
+                        assertThat(message)
+                                .doesNotContain(dummyToken)
+                                .doesNotContain("Bearer " + dummyToken)
                 );
     }
 
     @Test
-    void webClientBean_ShouldNotExposeToken_InStringRepresentation() {
-        // Given: Dummy configuration
+    void shouldNotExposeTokenInStringRepresentation() {
+        // Given: WebClient configured with token
         String dummyToken = "another-secret-token-12345";
-        GitHubProperties.Client clientConfig = new GitHubProperties.Client(
-                Duration.ofSeconds(10),
-                Duration.ofSeconds(5)
-        );
-        GitHubProperties properties = new GitHubProperties(
-                "https://api.github.com",
-                dummyToken,
-                "/test",
-                clientConfig
-        );
+        WebClient webClient = createWebClient(dummyToken);
 
-        // When: Create WebClient using filter approach
-        GitClientConfig config = new GitClientConfig();
-        WebClient webClient = config.gitHubWebClient(properties);
-
-        // Then: Token should not be in bean's string representation
+        // When: Get string representation of WebClient
         String webClientString = webClient.toString();
+
+        // Then: Token should not appear in string representation
         assertThat(webClientString)
-                .as("Token should not be visible in WebClient bean")
-                .doesNotContain(dummyToken);
-        assertThat(webClientString)
-                .as("Authorization header should not be in default headers")
+                .as("Token and Authorization header should not be visible in WebClient bean")
+                .doesNotContain(dummyToken)
                 .doesNotContain("Authorization");
     }
 
+    private static WebClient createWebClient(String token) {
+        GitHubProperties.Client clientConfig = new GitHubProperties.Client(
+                CONNECT_TIMEOUT,
+                RESPONSE_TIMEOUT
+        );
+        GitHubProperties properties = new GitHubProperties(
+                "https://api.github.com",
+                token,
+                TEST_PATH,
+                clientConfig
+        );
+
+        GitClientConfig config = new GitClientConfig();
+        return config.gitHubWebClient(properties);
+    }
+
     @Test
-    void gitHubWebClient_ShouldAddAuthorizationHeaderToActualRequest() throws Exception {
-        // Given: Dummy token for testing
+    void shouldAddAuthorizationHeaderToActualRequest() throws Exception {
+        // Given: WebClient configured with authentication token
         String dummyToken = "test-token-should-be-sent";
         GitHubProperties.Client clientConfig = new GitHubProperties.Client(
-                Duration.ofSeconds(10),
-                Duration.ofSeconds(5)
+                CONNECT_TIMEOUT,
+                RESPONSE_TIMEOUT
         );
         GitHubProperties properties = new GitHubProperties(
                 mockWebServer.url("/").toString(),
                 dummyToken,
-                "/test",
+                TEST_PATH,
                 clientConfig
         );
 
@@ -164,17 +167,17 @@ class GitClientLoggingSecurityTest {
                 .setResponseCode(200)
                 .setBody("{\"message\":\"success\"}"));
 
-        // When: Create WebClient and make actual HTTP request
         GitClientConfig config = new GitClientConfig();
         WebClient webClient = config.gitHubWebClient(properties);
 
+        // When: Execute HTTP request
         webClient.get()
-                .uri("/api/test")
+                .uri(TEST_API_PATH)
                 .retrieve()
                 .bodyToMono(String.class)
                 .block();
 
-        // Then: Verify Authorization header was added to the actual HTTP request
+        // Then: Authorization header should be present in the actual HTTP request
         RecordedRequest recordedRequest = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
         assertThat(recordedRequest).isNotNull();
         assertThat(recordedRequest.getHeader("Authorization"))
@@ -188,54 +191,43 @@ class GitClientLoggingSecurityTest {
             "another-token-with-special-chars-!@#$%",
             "very-long-token-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     })
-    void webClientBean_ShouldNotExposeVariousTokens_InStringRepresentation(String dummyToken) {
-        // Given: Various dummy tokens
-        GitHubProperties.Client clientConfig = new GitHubProperties.Client(
-                Duration.ofSeconds(10),
-                Duration.ofSeconds(5)
-        );
-        GitHubProperties properties = new GitHubProperties(
-                "https://api.github.com",
-                dummyToken,
-                "/test",
-                clientConfig
-        );
+    void shouldNotExposeVariousTokensInStringRepresentation(String token) {
+        // Given: WebClient configured with various token formats
+        WebClient webClient = createWebClient(token);
 
-        // When: Create WebClient using filter approach
-        GitClientConfig config = new GitClientConfig();
-        WebClient webClient = config.gitHubWebClient(properties);
-
-        // Then: Token should not be in bean's string representation
+        // When: Get string representation of WebClient
         String webClientString = webClient.toString();
+
+        // Then: Token should not appear in string representation
         assertThat(webClientString)
-                .as("Token '%s' should not be visible in WebClient bean", dummyToken)
-                .doesNotContain(dummyToken);
+                .as("Token '%s' should not be visible in WebClient bean", token)
+                .doesNotContain(token);
     }
 
     @Test
-    void gitHubWebClient_ShouldThrowException_WhenTokenIsNull() throws Exception {
-        // Given: Null token
+    void shouldThrowExceptionWhenTokenIsNull() {
+        // Given: WebClient configured with null token
         GitHubProperties.Client clientConfig = new GitHubProperties.Client(
-                Duration.ofSeconds(10),
-                Duration.ofSeconds(5)
+                CONNECT_TIMEOUT,
+                RESPONSE_TIMEOUT
         );
         GitHubProperties properties = new GitHubProperties(
                 mockWebServer.url("/").toString(),
                 null,
-                "/test",
+                TEST_PATH,
                 clientConfig
         );
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
-        // When: Create WebClient and attempt to make request
         GitClientConfig config = new GitClientConfig();
         WebClient webClient = config.gitHubWebClient(properties);
 
-        // Then: Should throw IllegalStateException when filter is executed
+        // When: Execute HTTP request with null token
+        // Then: Should throw IllegalStateException
         assertThatThrownBy(() ->
                 webClient.get()
-                        .uri("/test")
+                        .uri(TEST_PATH)
                         .retrieve()
                         .bodyToMono(String.class)
                         .block()
@@ -245,29 +237,29 @@ class GitClientLoggingSecurityTest {
     }
 
     @Test
-    void gitHubWebClient_ShouldThrowException_WhenTokenIsBlank() throws Exception {
-        // Given: Blank token
+    void shouldThrowExceptionWhenTokenIsBlank() {
+        // Given: WebClient configured with blank token
         GitHubProperties.Client clientConfig = new GitHubProperties.Client(
-                Duration.ofSeconds(10),
-                Duration.ofSeconds(5)
+                CONNECT_TIMEOUT,
+                RESPONSE_TIMEOUT
         );
         GitHubProperties properties = new GitHubProperties(
                 mockWebServer.url("/").toString(),
                 "   ",
-                "/test",
+                TEST_PATH,
                 clientConfig
         );
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
 
-        // When: Create WebClient and attempt to make request
         GitClientConfig config = new GitClientConfig();
         WebClient webClient = config.gitHubWebClient(properties);
 
-        // Then: Should throw IllegalStateException when filter is executed
+        // When: Execute HTTP request with blank token
+        // Then: Should throw IllegalStateException
         assertThatThrownBy(() ->
                 webClient.get()
-                        .uri("/test")
+                        .uri(TEST_PATH)
                         .retrieve()
                         .bodyToMono(String.class)
                         .block()
