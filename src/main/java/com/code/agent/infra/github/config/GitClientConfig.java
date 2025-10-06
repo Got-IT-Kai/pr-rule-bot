@@ -27,8 +27,12 @@ public class GitClientConfig {
                 .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github+json")
                 .defaultHeader("X-GitHub-Api-Version", "2022-11-28")
                 .filter((request, next) -> {
+                    String token = gitHubProperties.token();
+                    if (token == null || token.isBlank()) {
+                        throw new IllegalStateException("GitHub token is required but not configured");
+                    }
                     ClientRequest modifiedRequest = ClientRequest.from(request)
-                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + gitHubProperties.token())
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
                             .build();
                     return next.exchange(modifiedRequest);
                 })

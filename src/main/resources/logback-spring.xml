@@ -30,7 +30,7 @@
     </appender>
 
     <!-- Security: Disable HTTP wire logging to prevent token exposure -->
-    <logger name="reactor.netty.http.client" level="OFF"/>
+    <logger name="reactor.netty.http.client.HttpClient" level="OFF"/>
     <logger name="org.springframework.web.reactive.function.client" level="INFO"/>
 
     <!-- Application loggers -->

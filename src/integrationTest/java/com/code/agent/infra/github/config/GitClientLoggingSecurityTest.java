@@ -5,9 +5,12 @@ import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.core.read.ListAppender;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
+import okhttp3.mockwebserver.RecordedRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.ClientRequest;
@@ -16,6 +19,7 @@ import reactor.netty.http.client.HttpClient;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -138,5 +142,72 @@ class GitClientLoggingSecurityTest {
         assertThat(webClientString)
                 .as("Authorization header should not be in default headers")
                 .doesNotContain("Authorization");
+    }
+
+    @Test
+    void gitHubWebClient_ShouldAddAuthorizationHeaderToActualRequest() throws Exception {
+        // Given: Dummy token for testing
+        String dummyToken = "test-token-should-be-sent";
+        GitHubProperties.Client clientConfig = new GitHubProperties.Client(
+                Duration.ofSeconds(10),
+                Duration.ofSeconds(5)
+        );
+        GitHubProperties properties = new GitHubProperties(
+                mockWebServer.url("/").toString(),
+                dummyToken,
+                "/test",
+                clientConfig
+        );
+
+        mockWebServer.enqueue(new MockResponse()
+                .setResponseCode(200)
+                .setBody("{\"message\":\"success\"}"));
+
+        // When: Create WebClient and make actual HTTP request
+        GitClientConfig config = new GitClientConfig();
+        WebClient webClient = config.gitHubWebClient(properties);
+
+        webClient.get()
+                .uri("/api/test")
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
+
+        // Then: Verify Authorization header was added to the actual HTTP request
+        RecordedRequest recordedRequest = mockWebServer.takeRequest(1, TimeUnit.SECONDS);
+        assertThat(recordedRequest).isNotNull();
+        assertThat(recordedRequest.getHeader("Authorization"))
+                .as("Authorization header should be present in HTTP request")
+                .isEqualTo("Bearer " + dummyToken);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "secret-token-123",
+            "another-token-with-special-chars-!@#$%",
+            "very-long-token-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    })
+    void webClientBean_ShouldNotExposeVariousTokens_InStringRepresentation(String dummyToken) {
+        // Given: Various dummy tokens
+        GitHubProperties.Client clientConfig = new GitHubProperties.Client(
+                Duration.ofSeconds(10),
+                Duration.ofSeconds(5)
+        );
+        GitHubProperties properties = new GitHubProperties(
+                "https://api.github.com",
+                dummyToken,
+                "/test",
+                clientConfig
+        );
+
+        // When: Create WebClient using filter approach
+        GitClientConfig config = new GitClientConfig();
+        WebClient webClient = config.gitHubWebClient(properties);
+
+        // Then: Token should not be in bean's string representation
+        String webClientString = webClient.toString();
+        assertThat(webClientString)
+                .as("Token '%s' should not be visible in WebClient bean", dummyToken)
+                .doesNotContain(dummyToken);
     }
 }
