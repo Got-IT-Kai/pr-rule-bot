@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
+import static com.code.agent.infra.github.GitHubConstants.DIFF_ACCEPT_HEADER;
+
 @Slf4j
 @Component
 public class GitHubReviewService {
@@ -22,7 +24,7 @@ public class GitHubReviewService {
     public Mono<String> fetchUnifiedDiff(String owner, String repo, int prNumber) {
         return gitHubWebClient.get()
                 .uri("/repos/{owner}/{repo}/pulls/{pull_number}", owner, repo, prNumber)
-                .header(HttpHeaders.ACCEPT, "application/vnd.github.v3.diff")
+                .header(HttpHeaders.ACCEPT, DIFF_ACCEPT_HEADER)
                 .retrieve()
                 .bodyToMono(String.class);
     }

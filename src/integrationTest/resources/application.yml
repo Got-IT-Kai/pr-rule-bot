@@ -37,6 +37,7 @@ github:
   base-url: http://localhost:8080
   token: test-token
   review-path: /repos/{owner}/{repo}/pulls/{pull_number}/reviews
+  webhook-secret: test-webhook-secret
   client:
     response-timeout: 300s
     connect-timeout: 5s

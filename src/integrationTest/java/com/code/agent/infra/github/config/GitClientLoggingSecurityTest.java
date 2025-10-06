@@ -70,7 +70,8 @@ class GitClientLoggingSecurityTest {
                 mockWebServer.url("/").toString(),
                 dummyToken,
                 TEST_PATH,
-                clientConfig
+                clientConfig,
+                "test-webhook-secret"
         );
 
         mockWebServer.enqueue(new MockResponse()
@@ -141,7 +142,8 @@ class GitClientLoggingSecurityTest {
                 "https://api.github.com",
                 token,
                 TEST_PATH,
-                clientConfig
+                clientConfig,
+                "test-webhook-secret"
         );
 
         GitClientConfig config = new GitClientConfig();
@@ -160,7 +162,8 @@ class GitClientLoggingSecurityTest {
                 mockWebServer.url("/").toString(),
                 dummyToken,
                 TEST_PATH,
-                clientConfig
+                clientConfig,
+                "test-webhook-secret"
         );
 
         mockWebServer.enqueue(new MockResponse()
@@ -215,7 +218,8 @@ class GitClientLoggingSecurityTest {
                 mockWebServer.url("/").toString(),
                 null,
                 TEST_PATH,
-                clientConfig
+                clientConfig,
+                "test-webhook-secret"
         );
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
@@ -247,7 +251,8 @@ class GitClientLoggingSecurityTest {
                 mockWebServer.url("/").toString(),
                 "   ",
                 TEST_PATH,
-                clientConfig
+                clientConfig,
+                "test-webhook-secret"
         );
 
         mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));

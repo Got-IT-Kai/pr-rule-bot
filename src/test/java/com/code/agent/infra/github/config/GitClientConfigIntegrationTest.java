@@ -22,7 +22,8 @@ class GitClientConfigIntegrationTest {
                 "https://api.github.com",
                 "test-token",
                 "/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-                client
+                client,
+                "test-webhook-secret"
         );
 
         GitClientConfig config = new GitClientConfig();
@@ -42,7 +43,8 @@ class GitClientConfigIntegrationTest {
                 "https://api.github.com",
                 "test-token",
                 "/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-                client
+                client,
+                "test-webhook-secret"
         );
 
         GitClientConfig config = new GitClientConfig();

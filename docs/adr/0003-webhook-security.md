@@ -1,7 +1,7 @@
 # ADR-0003: Webhook Security Implementation
 
-**Date:** 2025-10-05
-**Status:** Proposed
+**Date:** 2025-10-06
+**Status:** Accepted
 
 ## Context
 
@@ -19,14 +19,27 @@ GitHub provides webhook security through HMAC-SHA256 signature verification usin
 
 ## Decision
 
-Implement GitHub webhook signature verification to authenticate all incoming webhook requests using HMAC-SHA256.
+Implement GitHub webhook signature verification to authenticate all incoming webhook requests using HMAC-SHA256, with validation performed directly in the controller.
 
 **Key components:**
-1. WebhookSecurityService to verify HMAC signatures
-2. Spring WebFilter to intercept and validate webhook requests
-3. Environment-based secret management
+1. `WebhookSignatureValidator` to verify HMAC-SHA256 signatures
+2. Controller-level validation before processing webhook payloads
+3. Environment-based secret management via `GitHubProperties`
 4. Reject unauthorized requests with HTTP 401
 5. Security audit logging
+
+**Implementation approach:**
+- Validate signatures directly in `GitHubWebhookController`
+- Read raw request body using `ServerHttpRequest` and `DataBufferUtils` (WebFlux reactive streams)
+- Use `@Component` validator for signature verification logic
+- Apply validation before deserializing webhook payload
+
+**Rationale for controller-based approach:**
+- Simple and straightforward for single webhook endpoint
+- Handles WebFlux reactive request body properly using `DataBufferUtils.join()`
+- No need for `ContentCachingRequestWrapper` complexity
+- Easier to test and maintain
+- Sufficient for current requirements (avoiding over-engineering)
 
 ## Consequences
 
@@ -37,13 +50,17 @@ Implement GitHub webhook signature verification to authenticate all incoming web
 - Provides audit trail through failed authentication logs
 - Aligns with GitHub security best practices
 - Minimal performance impact (HMAC validation is fast)
+- Simple implementation without filter complexity
+- No request body stream consumption issues
+- Easy to test and debug
 
 ### Negative
 
 - Requires webhook secret configuration in all deployment environments
-- Adds filter to request processing pipeline
+- Validation logic coupled to controller (not reusable if more webhook endpoints added)
 - Must maintain secret synchronization between GitHub and application
 - Rejected requests need investigation (legitimate vs malicious)
+- Manual raw body handling required (bypassing Spring's automatic deserialization)
 
 ## Alternatives Considered
 
@@ -94,6 +111,24 @@ Implement GitHub webhook signature verification to authenticate all incoming web
 
 **Why rejected:** Signature verification is the standard and appropriate mechanism for webhooks.
 
+### Alternative 4: WebFilter-based Signature Verification
+
+**Description:** Implement signature validation in a Spring WebFilter that intercepts all webhook requests
+
+**Pros:**
+- Centralized security logic
+- Reusable across multiple webhook endpoints
+- Separates security concerns from business logic
+
+**Cons:**
+- Request body can only be read once in reactive stack
+- Requires `ContentCachingRequestWrapper` complexity
+- Over-engineering for single webhook endpoint
+- Filter ordering and configuration overhead
+- Harder to test in isolation
+
+**Why rejected:** Controller-based validation is simpler and sufficient for current single webhook endpoint. WebFilter introduces unnecessary complexity around request body handling. Can be revisited if multiple webhook endpoints are added.
+
 ## Implementation Strategy
 
 ### High-level approach
@@ -101,9 +136,9 @@ Implement GitHub webhook signature verification to authenticate all incoming web
 ```
 1. Generate shared secret
 2. Configure secret in GitHub webhook settings
-3. Store secret in application environment
-4. Implement HMAC-SHA256 verification
-5. Apply verification filter to webhook endpoints
+3. Store secret in application environment (GitHubProperties)
+4. Implement HMAC-SHA256 verification utility (WebhookSignatureValidator)
+5. Apply validation in webhook controller before processing
 6. Add security monitoring and alerts
 ```
 
@@ -131,18 +166,18 @@ github:
 ### Testing approach
 
 - Unit tests: Verify HMAC calculation with known test vectors
-- Integration tests: Test filter behavior with valid/invalid signatures
+- Integration tests: Test controller behavior with valid/invalid signatures
 - Security tests: Ensure constant-time comparison (timing attack prevention)
+- End-to-end tests: Validate with actual GitHub webhook payloads
 
 ## Implementation Tasks
 
-1. Implement HMAC-SHA256 verification service
-2. Create WebFilter for signature validation
-3. Add configuration for webhook secret
-4. Write comprehensive unit and integration tests
-5. Deploy to staging with monitoring
-6. Verify no false rejections in staging
-7. Deploy to production with gradual rollout
+1. Add webhook-secret to GitHubProperties configuration
+2. Update application.yml with webhook secret configuration
+3. Implement WebhookSignatureValidator utility class
+4. Modify GitHubWebhookController to validate signatures
+5. Write comprehensive unit and integration tests
+6. Update documentation and deployment guide
 
 ## Monitoring
 

@@ -231,8 +231,9 @@ All major technical decisions are documented as [Architecture Decision Records](
 
 Test the webhook endpoint:
 ```bash
-curl -X POST http://localhost:8080/api/webhook \
+curl -X POST http://localhost:8080/api/v1/webhooks/github/pull_request \
   -H "Content-Type: application/json" \
+  -H "X-GitHub-Event: pull_request" \
   -H "X-Hub-Signature-256: sha256=test" \
   -d '{"action": "opened", "pull_request": {...}}'
 ```
@@ -277,7 +278,7 @@ Set up webhook in your target repository:
 
 1. Navigate to **Settings → Webhooks → Add webhook**
 2. Configure:
-   - **Payload URL**: `https://your-server.com/api/webhook`
+   - **Payload URL**: `https://your-server.com/api/v1/webhooks/github/pull_request`
    - **Content type**: `application/json`
    - **Secret**: Your webhook secret (matches `GITHUB_WEBHOOK_SECRET`)
    - **Events**: Select "Pull requests"
@@ -297,7 +298,7 @@ Developer opens PR
     ↓
 GitHub sends webhook event
     ↓
-Bot receives event at /api/webhook
+Bot receives event at /api/v1/webhooks/github/pull_request
     ↓
 Signature verification (HMAC-SHA256)
     ↓
@@ -453,17 +454,26 @@ The bot supports multiple AI providers through Spring AI abstractions:
 ```
 pr-rule-bot/
 ├── src/
-│   ├── main/java/com/code/
-│   │   ├── adapter/           # External service integrations
-│   │   │   ├── ai/            # AI provider adapters (Gemini, Ollama)
-│   │   │   └── github/        # GitHub API client
-│   │   ├── config/            # Spring configuration
-│   │   ├── controller/        # REST/Webhook controllers
-│   │   ├── model/             # Domain models & DTOs
-│   │   │   ├── event/         # GitHub event models
-│   │   │   └── review/        # Review domain models
-│   │   ├── service/           # Business logic
-│   │   └── util/              # Utilities & helpers
+│   ├── main/java/com/code/agent/
+│   │   ├── presentation/      # Presentation layer
+│   │   │   └── web/           # REST/Webhook controllers
+│   │   ├── application/       # Application layer
+│   │   │   ├── service/       # Business logic orchestration
+│   │   │   └── listener/      # Event listeners
+│   │   ├── domain/            # Domain layer
+│   │   │   └── model/         # Domain models
+│   │   ├── infra/             # Infrastructure layer
+│   │   │   ├── ai/            # AI provider integrations (Gemini, Ollama)
+│   │   │   │   ├── config/    # AI configuration
+│   │   │   │   ├── router/    # AI provider routing
+│   │   │   │   └── service/   # AI service implementations
+│   │   │   └── github/        # GitHub integrations
+│   │   │       ├── config/    # GitHub configuration
+│   │   │       ├── event/     # GitHub event models
+│   │   │       ├── service/   # GitHub API client
+│   │   │       └── webhook/   # Webhook signature validation
+│   │   ├── config/            # Application-wide configuration
+│   │   └── cli/               # CLI mode support
 │   ├── main/resources/
 │   │   ├── application.yml    # Configuration
 │   │   └── logback-spring.xml # Logging configuration
@@ -478,7 +488,7 @@ pr-rule-bot/
 ├── .github/
 │   ├── workflows/             # GitHub Actions CI/CD
 │   └── ISSUE_TEMPLATE/        # Issue templates
-├── build.gradle               # Gradle build configuration
+├── build.gradle.kts           # Gradle build configuration (Kotlin DSL)
 └── README.md                  # This file
 ```
 

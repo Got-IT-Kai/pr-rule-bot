@@ -3,7 +3,6 @@ package com.code.agent.infra.ai.config;
 import org.junit.jupiter.api.Test;
 import org.springframework.ai.model.ollama.autoconfigure.OllamaConnectionProperties;
 import org.springframework.ai.ollama.api.OllamaApi;
-import org.springframework.web.client.RestClient;
 
 import java.time.Duration;
 
@@ -26,10 +25,8 @@ class AiConfigTest {
         OllamaConnectionProperties connectionProperties = new OllamaConnectionProperties();
         connectionProperties.setBaseUrl("http://localhost:11434");
 
-        RestClient.Builder restClientBuilder = RestClient.builder();
-
         AiConfig config = new AiConfig();
-        OllamaApi ollamaApi = config.ollamaApi(connectionProperties, aiClientProperties, restClientBuilder);
+        OllamaApi ollamaApi = config.ollamaApi(connectionProperties, aiClientProperties);
 
         assertThat(ollamaApi).isNotNull();
         assertThat(aiClientProperties.ollama().responseTimeout()).isEqualTo(customResponseTimeout);
@@ -44,10 +41,8 @@ class AiConfigTest {
         OllamaConnectionProperties connectionProperties = new OllamaConnectionProperties();
         connectionProperties.setBaseUrl("http://localhost:11434");
 
-        RestClient.Builder restClientBuilder = RestClient.builder();
-
         AiConfig config = new AiConfig();
-        OllamaApi ollamaApi = config.ollamaApi(connectionProperties, aiClientProperties, restClientBuilder);
+        OllamaApi ollamaApi = config.ollamaApi(connectionProperties, aiClientProperties);
 
         assertThat(ollamaApi).isNotNull();
         assertThat(aiClientProperties.ollama().responseTimeout()).isEqualTo(Duration.ofMinutes(10));

@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
-import org.springframework.web.client.RestClient;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
@@ -17,8 +16,7 @@ public class AiConfig {
 
     @Bean
     public OllamaApi ollamaApi(OllamaConnectionProperties connectionProperties,
-                               AiClientProperties aiClientProperties,
-                               RestClient.Builder restClientBuilder) {
+                               AiClientProperties aiClientProperties) {
         AiClientProperties.Ollama ollamaConfig = aiClientProperties.ollama();
 
         HttpClient httpClient = HttpClient.create()
@@ -34,7 +32,6 @@ public class AiConfig {
 
         return OllamaApi.builder()
                 .baseUrl(connectionProperties.getBaseUrl())
-                .restClientBuilder(restClientBuilder)
                 .webClientBuilder(webClientBuilder).build();
     }
 }

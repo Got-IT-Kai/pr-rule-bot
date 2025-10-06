@@ -38,9 +38,12 @@ public class ReviewCli implements ApplicationRunner {
         // Check if review already exists to prevent duplicate API calls
         gitHubReviewService.hasExistingReview(owner, repo, prNumber)
                 .flatMap(hasReview -> {
-                    if (hasReview) {
+                    if (hasReview && !cliProperties.forceReview()) {
                         log.info("Review already exists for {}/{} PR #{}, skipping to prevent duplicate", owner, repo, prNumber);
                         return Mono.empty();
+                    }
+                    if (hasReview) {
+                        log.info("Force review enabled for {}/{} PR #{}, proceeding despite existing review", owner, repo, prNumber);
                     }
                     return gitHubReviewService.fetchUnifiedDiff(owner, repo, prNumber);
                 })

@@ -9,6 +9,8 @@ import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
+import static com.code.agent.infra.github.GitHubConstants.*;
+
 @Configuration
 public class GitClientConfig {
 
@@ -24,15 +26,15 @@ public class GitClientConfig {
 
         return WebClient.builder()
                 .baseUrl(gitHubProperties.baseUrl())
-                .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github+json")
-                .defaultHeader("X-GitHub-Api-Version", "2022-11-28")
+                .defaultHeader(HttpHeaders.ACCEPT, API_ACCEPT_HEADER)
+                .defaultHeader(API_VERSION_HEADER, API_VERSION)
                 .filter((request, next) -> {
                     String token = gitHubProperties.token();
                     if (token == null || token.isBlank()) {
-                        throw new IllegalStateException("GitHub token is required but not configured");
+                        throw new IllegalStateException(ERROR_TOKEN_REQUIRED);
                     }
                     ClientRequest modifiedRequest = ClientRequest.from(request)
-                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                            .header(HttpHeaders.AUTHORIZATION, AUTHORIZATION_PREFIX + token)
                             .build();
                     return next.exchange(modifiedRequest);
                 })

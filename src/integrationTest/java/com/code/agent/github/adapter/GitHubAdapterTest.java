@@ -61,7 +61,8 @@ class GitHubAdapterTest {
                 baseUrl,
                 "test-token",
                 "/repos/{repositoryOwner}/{repositoryName}/pulls/{pullRequestNumber}/reviews",
-                new GitHubProperties.Client(null, null)  // Use defaults
+                new GitHubProperties.Client(null, null),  // Use defaults
+                "test-webhook-secret"
         );
 
         gitHubAdapter = new GitHubAdapter(testWebClient, gitHubProperties,

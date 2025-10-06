@@ -50,7 +50,8 @@ class GitHubPropertiesValidationTest {
                 baseUrl,
                 "valid-token",
                 "/valid/path",
-                validClient()
+                validClient(),
+                "test-webhook-secret"
             );
 
             // When
@@ -72,7 +73,8 @@ class GitHubPropertiesValidationTest {
                 "https://api.github.com",
                 "valid-token",
                 "/valid/path",
-                validClient()
+                validClient(),
+                "test-webhook-secret"
             );
 
             // When
@@ -97,7 +99,8 @@ class GitHubPropertiesValidationTest {
                 "https://api.github.com",
                 token,
                 "/valid/path",
-                validClient()
+                validClient(),
+                "test-webhook-secret"
             );
 
             // When
@@ -119,7 +122,8 @@ class GitHubPropertiesValidationTest {
                 "https://api.github.com",
                 "ghp_validtoken123456789",
                 "/valid/path",
-                validClient()
+                validClient(),
+                "test-webhook-secret"
             );
 
             // When
@@ -144,7 +148,8 @@ class GitHubPropertiesValidationTest {
                 "https://api.github.com",
                 "valid-token",
                 reviewPath,
-                validClient()
+                validClient(),
+                "test-webhook-secret"
             );
 
             // When
@@ -166,7 +171,8 @@ class GitHubPropertiesValidationTest {
                 "https://api.github.com",
                 "valid-token",
                 "/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-                validClient()
+                validClient(),
+                "test-webhook-secret"
             );
 
             // When
@@ -189,7 +195,8 @@ class GitHubPropertiesValidationTest {
                 "https://api.github.com",
                 "valid-token",
                 "/valid/path",
-                null
+                null,
+                "test-webhook-secret"
             );
 
             // When
@@ -211,7 +218,8 @@ class GitHubPropertiesValidationTest {
                 "https://api.github.com",
                 "valid-token",
                 "/valid/path",
-                validClient()
+                validClient(),
+                "test-webhook-secret"
             );
 
             // When
@@ -268,7 +276,8 @@ class GitHubPropertiesValidationTest {
                 new GitHubProperties.Client(
                     Duration.ofSeconds(300),
                     Duration.ofSeconds(5)
-                )
+                ),
+                "test-webhook-secret"
             );
 
             // When
@@ -290,7 +299,8 @@ class GitHubPropertiesValidationTest {
                 null,  // invalid baseUrl
                 "",    // invalid token
                 "   ", // invalid reviewPath
-                null   // invalid client
+                null,  // invalid client
+                ""     // invalid webhookSecret
             );
 
             // When
@@ -298,10 +308,10 @@ class GitHubPropertiesValidationTest {
 
             // Then
             assertThat(violations)
-                .hasSize(4)
+                .hasSize(5)
                 .extracting(ConstraintViolation::getPropertyPath)
                 .extracting(Object::toString)
-                .containsExactlyInAnyOrder("baseUrl", "token", "reviewPath", "client");
+                .containsExactlyInAnyOrder("baseUrl", "token", "reviewPath", "client", "webhookSecret");
         }
     }
 

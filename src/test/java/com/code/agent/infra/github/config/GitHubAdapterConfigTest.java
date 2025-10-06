@@ -42,7 +42,8 @@ class GitHubAdapterConfigTest {
             new GitHubProperties.Client(
                 Duration.ofSeconds(300),
                 Duration.ofSeconds(5)
-            )
+            ),
+            "test-webhook-secret"
         );
     }
 
@@ -111,7 +112,8 @@ class GitHubAdapterConfigTest {
                 new GitHubProperties.Client(
                     Duration.ofSeconds(600),
                     Duration.ofSeconds(10)
-                )
+                ),
+                "test-webhook-secret"
             );
 
             // When
@@ -129,7 +131,8 @@ class GitHubAdapterConfigTest {
                 "https://api.github.com",
                 "test-token",
                 "/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
-                new GitHubProperties.Client(null, null)  // Will use defaults
+                new GitHubProperties.Client(null, null),  // Will use defaults
+                "test-webhook-secret"
             );
 
             // When

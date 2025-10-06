@@ -57,7 +57,7 @@ class ReviewCliIntegrationTest {
         ConfigurableApplicationContext applicationContext = mock(ConfigurableApplicationContext.class);
 
         Repository repository = new Repository(OWNER, REPO);
-        CliProperties cliProperties = new CliProperties(repository, PR_NUMBER, 1);
+        CliProperties cliProperties = new CliProperties(repository, PR_NUMBER, 1, false);
 
         reviewCli = new ReviewCli(aiPort, gitHubReviewService, cliProperties, applicationContext);
     }

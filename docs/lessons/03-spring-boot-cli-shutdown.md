@@ -29,7 +29,7 @@ public class ReviewCli implements ApplicationRunner {
 
 **Issues:**
 1. `ApplicationRunner` completes execution, but Spring Boot context remains active
-2. Embedded Tomcat and other non-daemon threads stay alive
+2. Embedded Netty server (WebFlux) and other non-daemon threads stay alive
 3. GitHub Actions waits indefinitely for process termination
 
 ### Why This Happens

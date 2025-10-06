@@ -13,7 +13,8 @@ public record GitHubProperties(
         @NotBlank String baseUrl,
         @NotBlank String token,
         @NotBlank String reviewPath,
-        @NotNull Client client
+        @NotNull Client client,
+        @NotBlank String webhookSecret
 ) {
     public record Client(
             Duration responseTimeout,
