@@ -48,7 +48,7 @@ class ReviewCliTest {
     @BeforeEach
     void setUp() {
         Repository repository = new Repository(OWNER, REPO);
-        CliProperties cliProperties = new CliProperties(repository, PR_NUMBER, TIMEOUT_MINUTES);
+        CliProperties cliProperties = new CliProperties(repository, PR_NUMBER, TIMEOUT_MINUTES, false);
         reviewCli = new ReviewCli(aiPort, gitHubReviewService, cliProperties, applicationContext);
         args = new DefaultApplicationArguments(new String[0]);
     }

@@ -6,7 +6,7 @@ public record GitHubPullRequestEvent(
         Action action,
         Repository repository,
         Integer number,
-        PullRequest pullRequest
+        @JsonProperty("pull_request") PullRequest pullRequest
 ) {
     public enum Action {
         @JsonProperty("opened")
@@ -29,8 +29,8 @@ public record GitHubPullRequestEvent(
 
     public record PullRequest(
             String title,
-            String htmlUrl,
-            String diffUrl
+            @JsonProperty("html_url") String htmlUrl,
+            @JsonProperty("diff_url") String diffUrl
     ) {}
     public boolean isReviewTriggered() {
         return action == Action.OPENED || action == Action.REOPENED || action == Action.SYNCHRONIZE || action == Action.READY_FOR_REVIEW;

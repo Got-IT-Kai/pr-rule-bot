@@ -41,12 +41,10 @@ val blockhoundVersion by extra("1.0.8.RELEASE")
 val mockwebserverVersion by extra("4.12.0")
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.ai:spring-ai-starter-model-ollama")
     implementation("org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini")
-    implementation("io.projectreactor:reactor-core")
-    implementation("io.projectreactor.netty:reactor-netty-http")
     implementation("com.knuddels:jtokkit:$jtokkitVersion")
     // Required for Vertex AI Gemini - gRPC transport layer
     implementation("io.grpc:grpc-netty-shaded:$grpcVersion")
@@ -100,8 +98,7 @@ testing {
             dependencies {
                 implementation(project())
                 implementation("com.squareup.okhttp3:mockwebserver:$mockwebserverVersion")
-                implementation("org.springframework:spring-webflux")
-                implementation("io.projectreactor.netty:reactor-netty-http")
+                implementation("org.springframework.boot:spring-boot-starter-webflux")
             }
             targets {
                 all {

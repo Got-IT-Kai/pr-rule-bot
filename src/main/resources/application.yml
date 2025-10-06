@@ -29,6 +29,7 @@ github:
   base-url: "https://api.github.com"
   token: ${GITHUB_TOKEN}
   review-path: "/repos/{owner}/{repo}/pulls/{pull_number}/reviews"
+  webhook-secret: ${GITHUB_WEBHOOK_SECRET}
   client:
     response-timeout: 300s
     connect-timeout: 5s

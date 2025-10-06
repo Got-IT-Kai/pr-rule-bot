@@ -10,4 +10,5 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 public record CliProperties(@NotNull Repository repository,
                             @NotNull Integer prNumber,
-                            @NotNull @Positive Integer timeOutMinutes) {}
+                            @NotNull @Positive Integer timeOutMinutes,
+                            Boolean forceReview) {}
