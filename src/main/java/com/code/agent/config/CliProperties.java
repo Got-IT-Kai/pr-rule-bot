@@ -19,4 +19,4 @@ import org.springframework.validation.annotation.Validated;
 public record CliProperties(@NotNull Repository repository,
                             @NotNull Integer prNumber,
                             @NotNull @Positive Integer timeOutMinutes,
-                            Boolean forceReview) {}
+                            boolean forceReview) {}

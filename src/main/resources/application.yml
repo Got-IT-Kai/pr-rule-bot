@@ -57,3 +57,4 @@ cli:
     owner: ${REPO_OWNER:kai}
     name: ${REPO_NAME:pr-rule-bot}
   time-out-minutes: 20
+  force-review: ${FORCE_REVIEW:false}
