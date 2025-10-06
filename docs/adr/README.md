@@ -168,13 +168,21 @@ How will this decision be implemented at a high level?
 - Support for any file size
 - Related to: Code Review Section 6.5
 
+### Build & Tooling
+
+**[ADR-0009: Gradle Build Configuration Language](./0009-gradle-build-configuration.md)** (Accepted)
+- Migrate from Groovy DSL to Kotlin DSL
+- Type-safe build scripts with IDE support
+- Improved test task dependencies
+- Related to: Issue #55, PR #56
+
 ## ADR Lifecycle
 
 ### Status Definitions
 
-- **Proposed:** Decision under consideration
-- **Accepted:** Decision approved and ready for implementation
-- **Implemented:** Decision fully implemented in codebase
+- **Proposed:** Decision documented, awaiting implementation
+- **Accepted:** Decision approved and implemented in codebase
+- **Deferred to vX.X:** Decision postponed to future version with clear reasoning
 - **Deprecated:** Decision no longer relevant but kept for historical context
 - **Superseded:** Replaced by a newer ADR
 
@@ -296,7 +304,30 @@ ADRs are often created as a result of code review findings:
 2. **Propose solution** → Create ADR with alternatives
 3. **Review and approve** → Accept ADR
 4. **Implement** → Reference ADR in implementation
-5. **Update status** → Mark ADR as implemented
+5. **Measure and report** → Add validation results to PR description
+6. **Update status** → Mark ADR as implemented
+
+### Validation Results in PRs
+
+When implementing an ADR that includes validation criteria:
+
+**ADR contains (expected):**
+```markdown
+## Validation
+**Performance Benchmark:**
+- Build time: Accept up to 10% increase
+- Memory usage: No significant change expected
+```
+
+**PR description contains (actual):**
+```markdown
+## Validation Results
+- Build time: 8.2% increase (within 10% target ✅)
+- Memory usage: No change observed ✅
+- All tests pass ✅
+```
+
+This keeps ADRs focused on decisions while PRs show actual results.
 
 ## Quick Reference
 
@@ -310,6 +341,7 @@ ADRs are often created as a result of code review findings:
 | 0006 | Observability Strategy | Proposed | Critical | High |
 | 0007 | Circuit Breaker Pattern | Deferred | High | Medium |
 | 0008 | Token Chunking Strategy | Proposed | High | Medium |
+| 0009 | Gradle Build Configuration | Accepted | High | Medium |
 
 ## Best Practices
 
@@ -319,6 +351,7 @@ ADRs are often created as a result of code review findings:
 4. **Track Consequences:** Both positive and negative impacts
 5. **Reference Evidence:** Link to benchmarks, research, or discussions
 6. **Keep Updated:** Mark status changes as decisions evolve
+7. **Validation Results in PR:** ADRs contain expected criteria, actual measurement results go in PR description
 
 ## ADR vs Implementation Guide
 
@@ -338,6 +371,7 @@ ADRs are often created as a result of code review findings:
 - Step-by-step coding instructions
 - Detailed API usage examples
 - Configuration file contents
+- Actual validation/benchmark results (these go in PR description)
 
 ### Implementation Guide
 **Purpose:** Explain **how** to implement the decision
