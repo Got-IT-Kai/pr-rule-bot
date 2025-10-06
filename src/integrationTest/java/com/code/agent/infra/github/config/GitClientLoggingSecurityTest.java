@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class GitClientLoggingSecurityTest {
 
@@ -209,5 +210,69 @@ class GitClientLoggingSecurityTest {
         assertThat(webClientString)
                 .as("Token '%s' should not be visible in WebClient bean", dummyToken)
                 .doesNotContain(dummyToken);
+    }
+
+    @Test
+    void gitHubWebClient_ShouldThrowException_WhenTokenIsNull() throws Exception {
+        // Given: Null token
+        GitHubProperties.Client clientConfig = new GitHubProperties.Client(
+                Duration.ofSeconds(10),
+                Duration.ofSeconds(5)
+        );
+        GitHubProperties properties = new GitHubProperties(
+                mockWebServer.url("/").toString(),
+                null,
+                "/test",
+                clientConfig
+        );
+
+        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        // When: Create WebClient and attempt to make request
+        GitClientConfig config = new GitClientConfig();
+        WebClient webClient = config.gitHubWebClient(properties);
+
+        // Then: Should throw IllegalStateException when filter is executed
+        assertThatThrownBy(() ->
+                webClient.get()
+                        .uri("/test")
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block()
+        )
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("GitHub token is required");
+    }
+
+    @Test
+    void gitHubWebClient_ShouldThrowException_WhenTokenIsBlank() throws Exception {
+        // Given: Blank token
+        GitHubProperties.Client clientConfig = new GitHubProperties.Client(
+                Duration.ofSeconds(10),
+                Duration.ofSeconds(5)
+        );
+        GitHubProperties properties = new GitHubProperties(
+                mockWebServer.url("/").toString(),
+                "   ",
+                "/test",
+                clientConfig
+        );
+
+        mockWebServer.enqueue(new MockResponse().setResponseCode(200).setBody("{}"));
+
+        // When: Create WebClient and attempt to make request
+        GitClientConfig config = new GitClientConfig();
+        WebClient webClient = config.gitHubWebClient(properties);
+
+        // Then: Should throw IllegalStateException when filter is executed
+        assertThatThrownBy(() ->
+                webClient.get()
+                        .uri("/test")
+                        .retrieve()
+                        .bodyToMono(String.class)
+                        .block()
+        )
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("GitHub token is required");
     }
 }
