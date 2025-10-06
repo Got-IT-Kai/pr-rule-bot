@@ -121,25 +121,53 @@ Migrate from Gradle Groovy DSL to Gradle Kotlin DSL:
 
 ### Test Configuration Pattern
 
+Following [Gradle official documentation](https://docs.gradle.org/current/userguide/jvm_test_suite_plugin.html):
+
 ```kotlin
-// Ensure reliable test execution
+testing {
+    suites {
+        // Common configuration for all test suites
+        withType(JvmTestSuite::class).configureEach {
+            useJUnitJupiter()
+            dependencies {
+                implementation("org.springframework.boot:spring-boot-starter-test")
+                implementation("io.projectreactor:reactor-test")
+            }
+        }
+
+        // Unit tests (BlockHound enabled)
+        val test by getting(JvmTestSuite::class) {
+            dependencies {
+                implementation("org.mockito:mockito-inline:...")
+                implementation("io.projectreactor.tools:blockhound:...")
+            }
+        }
+
+        // Integration tests (BlockHound disabled)
+        val integrationTest by registering(JvmTestSuite::class) {
+            dependencies {
+                implementation(project())
+                implementation("com.squareup.okhttp3:mockwebserver:...")
+            }
+            targets {
+                all {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// Ensure check runs both test suites
 tasks.named("check") {
     dependsOn(tasks.named("test"))
     dependsOn(tasks.named("integrationTest"))
 }
-
-testing {
-    suites {
-        val test by getting(JvmTestSuite::class) {
-            // BlockHound enabled for unit tests
-        }
-
-        val integrationTest by getting(JvmTestSuite::class) {
-            // BlockHound disabled for integration tests
-        }
-    }
-}
 ```
+
+**Note:** JVM Test Suite Plugin is marked `@Incubating` but is the [recommended approach](https://blog.gradle.org/introducing-test-suites) by Gradle team for modern projects.
 
 ## Validation
 

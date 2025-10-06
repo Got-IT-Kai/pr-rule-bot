@@ -168,6 +168,14 @@ How will this decision be implemented at a high level?
 - Support for any file size
 - Related to: Code Review Section 6.5
 
+### Build & Tooling
+
+**[ADR-0009: Gradle Build Configuration Language](./0009-gradle-build-configuration.md)** (Proposed)
+- Migrate from Groovy DSL to Kotlin DSL
+- Type-safe build scripts with IDE support
+- Improved test task dependencies
+- Related to: Issue #55
+
 ## ADR Lifecycle
 
 ### Status Definitions
