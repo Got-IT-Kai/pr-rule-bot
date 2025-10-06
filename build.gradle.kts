@@ -17,7 +17,7 @@ sonar {
         property("sonar.host.url", "https://sonarcloud.io")
         property("sonar.coverage.jacoco.xmlReportPaths", "build/reports/jacoco/jacocoMergeReport/jacocoMergeReport.xml")
         property("sonar.junit.reportPaths", "build/test-results/test,build/test-results/integrationTest")
-        // Exclude GitHub Actions workflows from analysis
+        property("sonar.tests", "src/test/java,src/integrationTest/java")
         property("sonar.exclusions", ".github/workflows/**")
     }
 }
