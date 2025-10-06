@@ -39,7 +39,6 @@ ext {
 
 dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-web'
-    implementation 'org.springframework.ai:spring-ai-advisors-vector-store'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.ai:spring-ai-starter-model-ollama'
     implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
@@ -47,9 +46,6 @@ dependencies {
     implementation 'io.projectreactor.netty:reactor-netty-http'
     implementation 'com.knuddels:jtokkit:1.0.0'
     implementation 'io.grpc:grpc-netty-shaded:1.70.0'
-
-    //implementation 'org.springframework.ai:spring-ai-starter-vector-store-chroma'
-
     implementation 'io.github.cdimascio:dotenv-java:2.3.2'
 
     compileOnly 'org.projectlombok:lombok'
