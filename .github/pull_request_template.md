@@ -22,6 +22,12 @@ Related to #
 - [ ] Integration tests added/updated
 - [ ] Manual testing performed
 
+## ADR Validation Results (if applicable)
+If this PR implements an ADR with validation criteria, document actual results here:
+
+-
+-
+
 ## Checklist
 - [ ] Code follows project style guidelines
 - [ ] Self-review completed
