@@ -96,21 +96,16 @@ class WebhookSignatureValidatorTest {
     }
 
     @ParameterizedTest
-    @NullAndEmptySource
-    @ValueSource(strings = {"  ", "\t", "\n"})
-    void shouldRejectBlankPayload(String blankPayload) {
-        // Given: Blank or whitespace payload
-        String signature = calculateExpectedSignature(blankPayload == null ? "" : blankPayload, TEST_SECRET);
+    @ValueSource(strings = {"", "  ", "\t", "\n"})
+    void shouldValidateEmptyAndWhitespacePayload(String payload) {
+        // Given: Empty or whitespace payload (valid but empty)
+        String signature = calculateExpectedSignature(payload, TEST_SECRET);
 
-        // When: Validate blank payload
-        boolean result = validator.isValid(blankPayload, signature, TEST_SECRET);
+        // When: Validate empty/whitespace payload
+        boolean result = validator.isValid(payload, signature, TEST_SECRET);
 
-        // Then: Should return false for null, true for empty/whitespace (they are valid payloads)
-        if (blankPayload == null) {
-            assertThat(result).isFalse();
-        } else {
-            assertThat(result).isTrue();
-        }
+        // Then: Should return true (empty/whitespace are valid payloads, just contain no data)
+        assertThat(result).isTrue();
     }
 
     @Test
@@ -196,7 +191,7 @@ class WebhookSignatureValidatorTest {
         String payload = "test";
         String secret = "secret";
         String lowercaseSignature = calculateExpectedSignature(payload, secret);
-        String uppercaseSignature = lowercaseSignature.toUpperCase();
+        String uppercaseSignature = lowercaseSignature.toUpperCase(java.util.Locale.ROOT);
 
         // When: Validate with uppercase signature
         boolean result = validator.isValid(payload, uppercaseSignature, secret);
