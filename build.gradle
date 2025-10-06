@@ -35,6 +35,12 @@ repositories {
 
 ext {
     set('springAiVersion', "1.0.0")
+    set('grpcVersion', "1.75.0")
+    set('jtokkitVersion', "1.0.0")
+    set('dotenvVersion', "2.3.2")
+    set('mockitoInlineVersion', "5.2.0")
+    set('blockhoundVersion', "1.0.8.RELEASE")
+    set('mockwebserverVersion', "4.12.0")
 }
 
 dependencies {
@@ -44,12 +50,17 @@ dependencies {
     implementation 'org.springframework.ai:spring-ai-starter-model-vertex-ai-gemini'
     implementation 'io.projectreactor:reactor-core'
     implementation 'io.projectreactor.netty:reactor-netty-http'
-    implementation 'com.knuddels:jtokkit:1.0.0'
-    implementation 'io.grpc:grpc-netty-shaded:1.70.0'
-    implementation 'io.github.cdimascio:dotenv-java:2.3.2'
+    implementation "com.knuddels:jtokkit:${jtokkitVersion}"
+    // Required for Vertex AI Gemini - gRPC transport layer
+    implementation "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    implementation "io.github.cdimascio:dotenv-java:${dotenvVersion}"
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // Removed: spring-ai-advisors-vector-store
+    // Reason: ChromaDB vector store not needed for v1.0 (deferred to v2.0 for RAG features)
+    // See: Issue #44, docs/release/v1.0-plan.md
 }
 
 dependencyManagement {
@@ -66,8 +77,8 @@ testing {
             dependencies {
                 implementation 'org.springframework.boot:spring-boot-starter-test'
                 implementation 'io.projectreactor:reactor-test'
-                implementation 'org.mockito:mockito-inline:5.2.0'
-                implementation 'io.projectreactor.tools:blockhound:1.0.8.RELEASE'
+                implementation "org.mockito:mockito-inline:${mockitoInlineVersion}"
+                implementation "io.projectreactor.tools:blockhound:${blockhoundVersion}"
                 implementation 'org.junit.platform:junit-platform-launcher'
             }
             targets.all {
@@ -85,7 +96,7 @@ testing {
                 implementation project()
                 implementation 'org.springframework.boot:spring-boot-starter-test'
                 implementation 'io.projectreactor:reactor-test'
-                implementation 'com.squareup.okhttp3:mockwebserver:4.12.0'
+                implementation "com.squareup.okhttp3:mockwebserver:${mockwebserverVersion}"
                 implementation 'org.springframework:spring-webflux'
                 implementation 'io.projectreactor.netty:reactor-netty-http'
             }

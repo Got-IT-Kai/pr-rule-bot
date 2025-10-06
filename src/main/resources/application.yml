@@ -6,6 +6,8 @@ spring:
       - ${APP_MODE:web}
   jackson:
     property-naming-strategy: SNAKE_CASE
+  # Note: ChromaDB vector store configuration removed (Issue #44)
+  # RAG features deferred to v2.0 - see docs/release/v1.0-plan.md
   ai:
     ollama:
       base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
