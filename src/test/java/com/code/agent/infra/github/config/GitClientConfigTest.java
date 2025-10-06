@@ -67,4 +67,26 @@ class GitClientConfigTest {
         assertThat(client.responseTimeout()).isEqualTo(customResponse);
         assertThat(client.connectTimeout()).isEqualTo(customConnect);
     }
+
+    @Test
+    void gitHubWebClient_ShouldNotExposeTokenInBean() {
+        GitHubProperties.Client client = new GitHubProperties.Client(
+                Duration.ofSeconds(300),
+                Duration.ofSeconds(5)
+        );
+        GitHubProperties properties = new GitHubProperties(
+                "https://api.github.com",
+                "secret-token-12345",
+                "/repos/{owner}/{repo}/pulls/{pull_number}/reviews",
+                client
+        );
+
+        GitClientConfig config = new GitClientConfig();
+        WebClient webClient = config.gitHubWebClient(properties);
+
+        // Security: Token should not be visible in WebClient bean's string representation
+        String webClientString = webClient.toString();
+        assertThat(webClientString).doesNotContain("secret-token-12345");
+        assertThat(webClientString).doesNotContain("Authorization");
+    }
 }

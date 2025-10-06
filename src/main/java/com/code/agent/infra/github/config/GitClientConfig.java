@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
 
@@ -21,10 +22,20 @@ public class GitClientConfig {
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS,
                         (int) clientConfig.connectTimeout().toMillis());
 
-        return WebClient.builder().baseUrl(gitHubProperties.baseUrl())
+        return WebClient.builder()
+                .baseUrl(gitHubProperties.baseUrl())
                 .defaultHeader(HttpHeaders.ACCEPT, "application/vnd.github+json")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + gitHubProperties.token())
                 .defaultHeader("X-GitHub-Api-Version", "2022-11-28")
+                .filter((request, next) -> {
+                    String token = gitHubProperties.token();
+                    if (token == null || token.isBlank()) {
+                        throw new IllegalStateException("GitHub token is required but not configured");
+                    }
+                    ClientRequest modifiedRequest = ClientRequest.from(request)
+                            .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                            .build();
+                    return next.exchange(modifiedRequest);
+                })
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
 
