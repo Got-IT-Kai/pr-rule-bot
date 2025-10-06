@@ -1,7 +1,7 @@
 # ADR-0009: Gradle Build Configuration Language
 
 **Date:** 2025-10-06
-**Status:** Proposed
+**Status:** Accepted
 
 ## Context
 
@@ -181,6 +181,8 @@ tasks.named("check") {
 **Performance Benchmark:**
 - Measure clean build time before/after migration
 - Accept up to 10% build time increase for type safety benefits
+
+**Note:** Actual validation results should be documented in the PR description when implementing this ADR. See PR template "ADR Validation Results" section for format.
 
 ## References
 

@@ -170,11 +170,11 @@ How will this decision be implemented at a high level?
 
 ### Build & Tooling
 
-**[ADR-0009: Gradle Build Configuration Language](./0009-gradle-build-configuration.md)** (Proposed)
+**[ADR-0009: Gradle Build Configuration Language](./0009-gradle-build-configuration.md)** (Accepted)
 - Migrate from Groovy DSL to Kotlin DSL
 - Type-safe build scripts with IDE support
 - Improved test task dependencies
-- Related to: Issue #55
+- Related to: Issue #55, PR #56
 
 ## ADR Lifecycle
 
@@ -341,6 +341,7 @@ This keeps ADRs focused on decisions while PRs show actual results.
 | 0006 | Observability Strategy | Proposed | Critical | High |
 | 0007 | Circuit Breaker Pattern | Deferred | High | Medium |
 | 0008 | Token Chunking Strategy | Proposed | High | Medium |
+| 0009 | Gradle Build Configuration | Accepted | High | Medium |
 
 ## Best Practices
 

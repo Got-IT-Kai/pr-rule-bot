@@ -81,7 +81,7 @@ testing {
             dependencies {
                 implementation("org.mockito:mockito-inline:$mockitoInlineVersion")
                 implementation("io.projectreactor.tools:blockhound:$blockhoundVersion")
-                implementation("org.junit.platform:junit-platform-launcher")
+                runtimeOnly("org.junit.platform:junit-platform-launcher")
             }
             targets.all {
                 testTask.configure {
