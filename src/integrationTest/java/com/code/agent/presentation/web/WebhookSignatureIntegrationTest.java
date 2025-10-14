@@ -13,7 +13,10 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 
-import static com.code.agent.infra.github.GitHubConstants.*;
+import static com.code.agent.infra.github.GitHubConstants.HMAC_ALGORITHM;
+import static com.code.agent.infra.github.GitHubConstants.SIGNATURE_PREFIX;
+import static com.code.agent.infra.github.GitHubConstants.WEBHOOK_EVENT_HEADER;
+import static com.code.agent.infra.github.GitHubConstants.WEBHOOK_SIGNATURE_HEADER;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
