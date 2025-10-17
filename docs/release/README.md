@@ -12,8 +12,6 @@ Create release plan document:
 - Document architecture decisions (ADRs)
 - Set success criteria
 
-See: [v1.0-plan.md](./v1.0-plan.md)
-
 ### 2. Development Phase
 
 #### Create Milestones
@@ -64,7 +62,7 @@ git push origin v1.0.0
 # Create GitHub release
 gh release create v1.0.0 \
   --title "v1.0.0 - First Production Release" \
-  --notes-file docs/release/v1.0-notes.md \
+  --notes-file docs/release/release-notes.md \
   --target master
 ```
 
@@ -134,8 +132,6 @@ gh api repos/Got-IT-Kai/pr-rule-bot/milestones/<number> -X PATCH \
 ## Documents in this Directory
 
 - **README.md** (this file): Release process guide
-- **v1.0-plan.md**: Detailed v1.0 release plan
-- **v1.0-notes.md**: Release notes for v1.0 (created when ready)
 - **CHANGELOG.md** (root): Complete project changelog
 
 ## Related Documentation

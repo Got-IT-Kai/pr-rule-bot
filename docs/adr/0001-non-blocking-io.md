@@ -1,7 +1,8 @@
 # ADR-0001: Adopt Fully Non-Blocking I/O
 
 **Date:** 2025-07-21
-**Status:** Accepted
+**Status:** Implemented
+**Implementation Date:** 2025-08-01
 
 ## Context
 

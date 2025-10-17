@@ -14,35 +14,7 @@ Each ADR follows this structure:
 # ADR-XXX: [Title]
 
 **Date:** YYYY-MM-DD
-**Status:** [Proposed | Accepted | Implemented | Deprecated | Superseded | Deferred to vX.X]
-
-<!-- If status is "Deferred", add the Deferral Decision section below -->
-
-## v1.0 Deferral Decision (Optional - only if deferred)
-
-**Reasoning:** Brief explanation of why this decision is deferred.
-
-**Current Approach (vX.X):**
-- What simple/minimal solution is being used instead
-- What existing mechanisms provide partial coverage
-
-**Why not needed for vX.X:**
-- Context-specific reason (e.g., single-user, personal project)
-- Cost/complexity vs benefit analysis
-- Existing alternatives that are "good enough"
-
-**When to reconsider (vX.Y):**
-- Specific triggers or conditions
-- Scale thresholds (e.g., multi-user, high traffic)
-- Business requirements (e.g., SLA, compliance)
-
-**vX.X Action Items (if applicable):**
-- Specific steps to take for the deferred version
-- What to keep/remove
-
-See original comprehensive strategy below for future reference.
-
----
+**Status:** [Proposed | Accepted | Implemented | Deprecated | Superseded]
 
 ## Context
 
@@ -114,53 +86,26 @@ How will this decision be implemented at a high level?
 
 ### Architecture & Design
 
-**[ADR-0001: Non-Blocking I/O](./0001-non-blocking-io.md)** (Accepted)
+**[ADR-0001: Non-Blocking I/O](./0001-non-blocking-io.md)** (Implemented)
 - Use Spring WebFlux for reactive programming
 - Full non-blocking architecture
-- Status: Implemented
 
-**[ADR-0002: Automate PR Reviews via GitHub Actions](./0002-automate-pr-reviews-via-github-actions.md)** (Accepted)
+**[ADR-0002: Automate PR Reviews via GitHub Actions](./0002-automate-pr-reviews-via-github-actions.md)** (Implemented)
 - Use GitHub Actions for CI/CD automation
 - Switch from self-hosted to managed AI API
-- Status: Implemented
 
 ### Infrastructure & Security
 
-**[ADR-0003: Webhook Security](./0003-webhook-security.md)** (Proposed)
+**[ADR-0003: Webhook Security](./0003-webhook-security.md)** (Implemented)
 - Implement GitHub webhook signature verification
 - Add security layer to prevent unauthorized API access
-- Related to: Code Review CI-1
 
 **[ADR-0004: Bot Identity Management](./0004-bot-identity-management.md)** (Proposed)
 - Fix duplicate review detection
 - Properly identify bot-generated reviews
 - Related to: Code Review CI-3
 
-**[ADR-0005: Rate Limiting Strategy](./0005-rate-limiting.md)** (Deferred to v2.0)
-- Rate limiting deferred for personal project context
-- Not needed for single-user v1.0 deployment
-- Kafka provides backpressure in v2.0
-- Will reconsider for multi-user/public deployment
-- Related to: Code Review CI-2
-
-### Observability & Operations
-
-**[ADR-0006: Observability Strategy with OpenTelemetry](./0006-observability-strategy.md)** (Proposed)
-- Environment-specific OTEL configuration
-- Distributed tracing with Tempo/Jaeger
-- Metrics with Prometheus and Grafana
-- CI pipeline trace analysis
-- Production monitoring infrastructure
-- v1.0 Update: Remove OTEL, defer to v2.0
-
 ### Resilience & Scalability
-
-**[ADR-0007: Circuit Breaker Pattern](./0007-circuit-breaker-pattern.md)** (Deferred to v2.0)
-- Circuit breaker deferred for personal project context
-- Not needed for single-user v1.0 deployment
-- Simple retry sufficient for transient failures
-- Will reconsider for high-availability requirements
-- Related to: Code Review I-3
 
 **[ADR-0008: Token Chunking Strategy](./0008-token-chunking-strategy.md)** (Proposed)
 - Smart chunking for large files exceeding token limits
@@ -170,11 +115,27 @@ How will this decision be implemented at a high level?
 
 ### Build & Tooling
 
-**[ADR-0009: Gradle Build Configuration Language](./0009-gradle-build-configuration.md)** (Accepted)
+**[ADR-0009: Gradle Build Configuration Language](./0009-gradle-build-configuration.md)** (Implemented)
 - Migrate from Groovy DSL to Kotlin DSL
 - Type-safe build scripts with IDE support
 - Improved test task dependencies
-- Related to: Issue #55, PR #56
+
+### Architecture & Deployment
+
+**[ADR-0014: OpenTelemetry from Day 1](./0014-opentelemetry-from-day-1.md)** (Proposed)
+- Implement observability from initial launch
+- Distributed tracing, metrics, and logs
+- Quality metrics validation from start
+
+**[ADR-0015: Microservices Architecture](./0015-microservices-architecture.md)** (Proposed)
+- Adopt microservices with Kafka event-driven architecture
+- 5 independent services with clear boundaries
+- Independent scaling and deployment
+
+**[ADR-0016: Kubernetes Deployment Strategy](./0016-kubernetes-deployment-strategy.md)** (Proposed)
+- Kubernetes orchestration for microservices
+- Auto-scaling, rolling updates, health checks
+- Zero-downtime deployment strategy
 
 ## ADR Lifecycle
 
@@ -182,7 +143,6 @@ How will this decision be implemented at a high level?
 
 - **Proposed:** Decision documented, awaiting implementation
 - **Accepted:** Decision approved and implemented in codebase
-- **Deferred to vX.X:** Decision postponed to future version with clear reasoning
 - **Deprecated:** Decision no longer relevant but kept for historical context
 - **Superseded:** Replaced by a newer ADR
 
@@ -242,30 +202,17 @@ Skip ADR for implementation tasks with obvious solutions:
 - Style guide is separate documentation
 - No architectural decision involved
 
-**OTEL Configuration:** ✅ ADR update needed
-- Decision to remove vs minimal implementation
-- Trade-offs: observability vs complexity
-- Update existing ADR-0006 with v1.0 decision
-
 ## Creating a New ADR
 
 1. Verify ADR is needed (use decision tree above)
 2. Copy the template structure from the "ADR Format" section above
 3. Number sequentially (0001, 0002, etc.)
 4. Create file: `XXXX-descriptive-name.md`
-5. Fill in all sections:
-   - Remove optional sections if not applicable
-   - If status is "Deferred to vX.X", include the "Deferral Decision" section
-   - Provide clear reasoning for deferral and alternative approach
+5. Fill in all sections (remove optional sections if not applicable)
 6. Create PR for review
 7. Update this ADR Index
 8. Link to related code reviews or issues
 
-**For Deferred ADRs:**
-- Always include the comprehensive original strategy for future reference
-- Clearly state what simple approach is being used instead
-- Define specific conditions for when to reconsider
-- Examples: ADR-0005, ADR-0006, ADR-0007
 
 ### Updating Existing ADRs
 
@@ -333,15 +280,15 @@ This keeps ADRs focused on decisions while PRs show actual results.
 
 | ADR | Title | Status | Priority | Complexity |
 |-----|-------|--------|----------|------------|
-| 0001 | Non-Blocking I/O | Accepted | - | High |
-| 0002 | Automate PR Reviews | Accepted | - | Medium |
-| 0003 | Webhook Security | Proposed | Critical | Medium |
+| 0001 | Non-Blocking I/O | Implemented | - | High |
+| 0002 | Automate PR Reviews | Implemented | - | Medium |
+| 0003 | Webhook Security | Implemented | Critical | Medium |
 | 0004 | Bot Identity Management | Proposed | High | Low |
-| 0005 | Rate Limiting Strategy | Deferred | High | Medium |
-| 0006 | Observability Strategy | Proposed | Critical | High |
-| 0007 | Circuit Breaker Pattern | Deferred | High | Medium |
 | 0008 | Token Chunking Strategy | Proposed | High | Medium |
-| 0009 | Gradle Build Configuration | Accepted | High | Medium |
+| 0009 | Gradle Build Configuration | Implemented | High | Medium |
+| 0014 | OpenTelemetry from Day 1 | Proposed | Critical | Medium |
+| 0015 | Microservices Architecture | Proposed | Critical | High |
+| 0016 | Kubernetes Deployment Strategy | Proposed | Critical | High |
 
 ## Best Practices
 

@@ -1,7 +1,8 @@
 # ADR-0009: Gradle Build Configuration Language
 
 **Date:** 2025-10-06
-**Status:** Accepted
+**Status:** Implemented
+**Implementation Date:** 2025-10-17
 
 ## Context
 
