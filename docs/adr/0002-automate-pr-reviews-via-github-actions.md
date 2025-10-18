@@ -1,7 +1,8 @@
 # ADR-0002: Automate PR Reviews via GitHub Actions and Managed AI API
 
 **Date:** 2025-08-14
-**Status:** Accepted
+**Status:** Implemented
+**Implementation Date:** 2025-10-05
 
 ## Context
 

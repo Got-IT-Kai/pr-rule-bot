@@ -1,7 +1,8 @@
 # ADR-0003: Webhook Security Implementation
 
 **Date:** 2025-10-06
-**Status:** Accepted
+**Status:** Implemented
+**Implementation Date:** 2025-10-15
 
 ## Context
 

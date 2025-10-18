@@ -54,8 +54,7 @@ dependencies {
     annotationProcessor("org.projectlombok:lombok")
 
     // Removed: spring-ai-advisors-vector-store
-    // Reason: ChromaDB vector store not needed for v1.0 (deferred to v2.0 for RAG features)
-    // See: Issue #44, docs/release/v1.0-plan.md
+    // Reason: ChromaDB vector store not needed - See Issue #44
 }
 
 dependencyManagement {
