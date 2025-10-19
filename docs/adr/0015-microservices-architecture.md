@@ -1,7 +1,8 @@
 # ADR-0015: Microservices Architecture with Kafka and Kubernetes
 
 **Date**: 2025-10-16
-**Status**: Proposed
+**Status**: Accepted
+**Implementation Started**: 2025-10-20 (Issue #71)
 
 ---
 
