@@ -24,7 +24,6 @@ An intelligent code review bot leveraging Large Language Models to provide compr
 - [Configuration](#configuration)
 - [Development](#development)
 - [Documentation](#documentation)
-- [Roadmap](#roadmap)
 - [License](#license)
 
 ---
@@ -602,40 +601,6 @@ All significant architectural decisions are documented with context, alternative
   - [Reactive Programming Pitfalls](docs/lessons/02-reactive-programming-pitfalls.md)
   - [GCP Workload Identity Federation](docs/lessons/04-gcp-workload-identity-federation-setup.md)
 - **[Issue Templates](.github/ISSUE_TEMPLATE/)** - Bug reports, features, security
-
----
-
-## Roadmap
-
-### Current Development
-
-**Focus**: Production-ready microservices with context intelligence
-
-**Architecture:**
-- [ ] Microservices architecture design (ADR-0015 - Proposed)
-- [ ] Kafka event-driven communication (KRaft mode - Planned)
-- [ ] Kubernetes deployment strategy (ADR-0016 - Proposed)
-- [ ] Service implementation (5 services)
-- [ ] OpenTelemetry observability
-
-**Core Features:**
-- [ ] Context intelligence (historical PRs, ADRs, conventions)
-- [ ] Evidence-based review (SARIF format)
-- [ ] Safety-first automation (GitHub Checks API)
-- [ ] Policy engine (rule-based review)
-- [ ] AI review service (Gemini integration)
-
-**Security:**
-- [x] Webhook signature verification (ADR-0003)
-- [ ] Prompt injection protection
-- [ ] Secret detection (Gitleaks)
-- [ ] Token sanitization
-
-**Quality Metrics:**
-- [ ] Finding precision ≥ 75%
-- [ ] Finding recall ≥ 70% (policy), ≥ 50% (bugs)
-- [ ] Adoption rate ≥ 40%
-- [ ] Lead time impact: -20%
 
 ---
 
