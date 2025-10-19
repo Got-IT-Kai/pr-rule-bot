@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Multi-module project structure with 5 microservices and common module ([#71])
+
 ### Changed
 - Migrated build configuration to Gradle Kotlin DSL for type-safety and better IDE support ([#55])
 - Migrated to Spring WebFlux for non-blocking webhook handling ([#61])
@@ -54,6 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#50]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/50
 [#55]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/55
 [#61]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/61
+[#71]: https://github.com/Got-IT-Kai/pr-rule-bot/issues/71
 
 <!-- Version Comparison Links -->
 [Unreleased]: https://github.com/Got-IT-Kai/pr-rule-bot/compare/master...HEAD
