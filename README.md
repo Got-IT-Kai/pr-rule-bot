@@ -24,7 +24,6 @@ An intelligent code review bot leveraging Large Language Models to provide compr
 - [Configuration](#configuration)
 - [Development](#development)
 - [Documentation](#documentation)
-- [Roadmap](#roadmap)
 - [License](#license)
 
 ---
@@ -38,7 +37,7 @@ Traditional code reviews are time-consuming and often miss subtle issues like se
 - **Developer Productivity**: Frees developers to focus on high-value architectural discussions
 - **Continuous Learning**: Improves code quality feedback based on evolving patterns
 
-The project demonstrates production-grade software engineering practices including reactive programming, microservices architecture, comprehensive testing, and systematic decision-making through Architecture Decision Records.
+The project demonstrates production-grade software engineering practices including reactive programming, comprehensive testing, and systematic decision-making through Architecture Decision Records.
 
 ---
 
@@ -80,68 +79,89 @@ The project demonstrates production-grade software engineering practices includi
 
 ### System Architecture
 
+**Current Implementation (Monolith):**
 ```
-┌──────────────────┐
-│  GitHub Events   │
-│  (Webhooks/API)  │
-└────────┬─────────┘
-         │
-         v
-┌──────────────────┐
-│ Security Filter  │  HMAC-SHA256 Signature Verification
-│ (Webhook Auth)   │
-└────────┬─────────┘
-         │
-         v
-┌──────────────────┐
-│ REST Controller  │  WebFlux Non-Blocking Controllers
-│ (Reactive Web)   │
-└────────┬─────────┘
-         │
-         v
-┌──────────────────┐
-│ Review Service   │  Core Business Logic
-│ (Orchestration)  │  • Event Processing
-└────────┬─────────┘  • Review Synthesis
-         │           • Error Handling
-         v
-    ┌────┴────┐
-    │         │
-    v         v
-┌────────┐ ┌──────────────┐
-│GitHub  │ │ AI Adapter   │  Strategy Pattern
-│Adapter │ │ (Abstraction)│  • Provider Selection
-└────────┘ └──────┬───────┘  • Token Management
-              │         │      • Retry Logic
-              v         v
-         ┌────────┐ ┌────────┐
-         │Gemini  │ │Ollama  │
-         │Provider│ │Provider│
-         └────────┘ └────────┘
+                          GitHub Platform
+                                │
+                                v
+                         ┌─────────────┐
+                         │   Webhook   │
+                         │  Controller │
+                         └──────┬──────┘
+                                │
+                                v
+                         ┌─────────────┐
+                         │    Agent    │
+                         │ Application │
+                         │             │
+                         │ • GitHub    │
+                         │ • AI Review │
+                         │ • Webhook   │
+                         └─────────────┘
+```
+
+**Planned Architecture (Microservices - See ADR-0015):**
+```
+                          GitHub Platform
+                                │
+                                v
+                         ┌─────────────┐
+                         │ API Gateway │
+                         └──────┬──────┘
+                                │
+                    ┌───────────┴───────────┐
+                    v                       v
+            ┌──────────────┐        ┌──────────────┐
+            │   Webhook    │        │ Integration  │
+            │   Service    │        │   Service    │
+            └──────┬───────┘        └──────▲───────┘
+                   │                       │
+                   v                       │
+              ┌─────────┐                  │
+              │  Kafka  │──────────────────┘
+              └────┬────┘
+                   │
+        ┌──────────┼──────────┐
+        v          v          v
+   ┌────────┐ ┌────────┐ ┌─────────┐
+   │Context │ │ Policy │ │ Review  │
+   │Service │ │Service │ │ Service │
+   └────────┘ └────────┘ └─────────┘
 ```
 
 ### Design Patterns & Principles
 
-- **Reactive Streams**: Full reactive pipeline from HTTP layer to external service calls
-- **Strategy Pattern**: Pluggable AI providers (Gemini, Ollama, extensible to OpenAI/Azure)
-- **Adapter Pattern**: Abstracted GitHub and AI service integrations
-- **Dependency Injection**: Spring Boot IoC for loose coupling and testability
-- **Fail-Fast**: Input validation with Spring Validation and custom constraints
-- **Error Handling**: Comprehensive exception handling with reactive error operators
+**Current Implementation:**
+- **Reactive Streams**: Non-blocking I/O throughout the stack with Spring WebFlux
+- **Hexagonal Architecture**: Ports and adapters pattern for clean separation
+- **Strategy Pattern**: Pluggable AI providers (Gemini, Ollama)
+
+**Planned Features (ADR-0015, ADR-0016):**
+- **Microservices Architecture**: 5 independent services with clear boundaries
+- **Event-Driven Architecture**: Asynchronous communication via Kafka
+- **Independent Deployment**: Zero-downtime rolling updates per service
+- **Auto-Scaling**: Kubernetes HPA based on metrics
 
 ### Architectural Decisions
 
 All major technical decisions are documented as [Architecture Decision Records](docs/adr/README.md), including:
 
-- [ADR-0001: Non-Blocking I/O](docs/adr/0001-non-blocking-io.md) - Why Spring WebFlux over traditional blocking I/O
-- [ADR-0002: GitHub Actions Integration](docs/adr/0002-automate-pr-reviews-via-github-actions.md) - CI/CD automation strategy
-- [ADR-0003: Webhook Security](docs/adr/0003-webhook-security.md) - HMAC signature verification implementation
-- [ADR-0004: Bot Identity Management](docs/adr/0004-bot-identity-management.md) - Preventing duplicate reviews
-- [ADR-0008: Token Chunking Strategy](docs/adr/0008-token-chunking-strategy.md) - Handling large files with LLM token limits
+**Foundation:**
+- [ADR-0001: Non-Blocking I/O](docs/adr/0001-non-blocking-io.md) - Spring WebFlux reactive architecture
+- [ADR-0015: Microservices Architecture](docs/adr/0015-microservices-architecture.md) - MSA with Kafka and Kubernetes
+- [ADR-0016: Kubernetes Deployment](docs/adr/0016-kubernetes-deployment-strategy.md) - Orchestration and scaling
+
+**Safety & Security:**
+- [ADR-0003: Webhook Security](docs/adr/0003-webhook-security.md) - HMAC signature verification
+
+**Operations:**
+- [ADR-0014: OpenTelemetry from Day 1](docs/adr/0014-opentelemetry-from-day-1.md) - Observability and metrics
 
 ---
 
 ## Technical Stack
+
+**Current Implementation:**
 
 | Technology | Version | Purpose |
 |------------|---------|---------|
@@ -149,16 +169,26 @@ All major technical decisions are documented as [Architecture Decision Records](
 | **Spring Boot** | 3.5.3 | Application framework with reactive web support |
 | **Spring WebFlux** | 6.2.x | Reactive web framework for non-blocking HTTP |
 | **Project Reactor** | 3.7.x | Reactive streams implementation (Mono/Flux) |
-| **Spring AI** | 1.0.0 | AI integration abstraction layer |
 | **Google Gemini** | 2.0 Flash | Cloud-based LLM for code analysis |
-| **Ollama** | Latest | Local LLM runtime (privacy-focused option) |
-| **Gradle** | 8.5+ | Build automation with version catalogs |
+| **Ollama** | Latest | Local LLM runtime for privacy-focused development |
+| **Spring AI** | Latest | AI provider abstraction framework |
+| **Gradle** | 8.5+ | Build automation with Kotlin DSL |
 | **JUnit 5** | 5.11.x | Unit and integration testing framework |
-| **Mockito** | 5.2.0 | Mocking framework for unit tests |
-| **JaCoCo** | Latest | Code coverage analysis |
-| **SonarCloud** | - | Continuous code quality and security scanning |
+| **Mockito** | 5.x | Mocking framework for unit tests |
+| **JaCoCo** | 0.8.x | Code coverage analysis |
+| **SonarCloud** | - | Continuous code quality monitoring |
+| **BlockHound** | Latest | Reactive blocking call detection |
 | **GitHub Actions** | - | CI/CD automation |
-| **BlockHound** | 1.0.8 | Reactive blocking call detection (dev/test) |
+
+**Planned Technologies (ADR-0015, ADR-0016):**
+
+| Technology | Version | Purpose |
+|------------|---------|---------|
+| **Apache Kafka** | 3.7.0 | Event streaming platform (KRaft mode) |
+| **Kubernetes** | 1.28+ | Container orchestration and scaling |
+| **PostgreSQL** | 16+ | Per-service relational database |
+| **Redis** | 7+ | Shared caching layer |
+| **OpenTelemetry** | Latest | Observability (metrics, traces, logs) |
 
 ---
 
@@ -561,10 +591,6 @@ All significant architectural decisions are documented with context, alternative
 - **Architecture & Performance**
   - [ADR-0001: Non-Blocking I/O](docs/adr/0001-non-blocking-io.md)
   - [ADR-0008: Token Chunking Strategy](docs/adr/0008-token-chunking-strategy.md)
-- **Deferred to v2.0**
-  - [ADR-0005: Rate Limiting Strategy](docs/adr/0005-rate-limiting.md)
-  - [ADR-0006: Observability Strategy](docs/adr/0006-observability-strategy.md)
-  - [ADR-0007: Circuit Breaker Pattern](docs/adr/0007-circuit-breaker-pattern.md)
 
 ### Additional Resources
 
@@ -575,58 +601,6 @@ All significant architectural decisions are documented with context, alternative
   - [Reactive Programming Pitfalls](docs/lessons/02-reactive-programming-pitfalls.md)
   - [GCP Workload Identity Federation](docs/lessons/04-gcp-workload-identity-federation-setup.md)
 - **[Issue Templates](.github/ISSUE_TEMPLATE/)** - Bug reports, features, security
-
----
-
-## Roadmap
-
-### v1.0 - Production Ready (In Progress)
-
-**Focus**: Core functionality with security and stability
-
-- **Security Hardening**
-  - [x] HMAC webhook signature verification
-  - [ ] AI prompt injection protection
-  - [ ] GitHub token log sanitization
-
-- **Core Features**
-  - [ ] Smart token chunking for large files
-  - [ ] Bot identity management
-  - [ ] Memory leak fixes
-  - [ ] Event publisher optimization
-
-- **Quality & Testing**
-  - [x] 82% test coverage (unit + integration)
-  - [ ] Improve AI adapter coverage (43% → 80%)
-  - [ ] Webhook controller tests (10% → 80%)
-
-- **Infrastructure**
-  - [ ] Remove unused OTEL dependencies
-  - [ ] Clean up vector database remnants
-  - [ ] JavaDoc documentation
-
-See [v1.0 Release Plan](docs/release/v1.0-plan.md) for detailed breakdown and [milestones](https://github.com/Got-IT-Kai/pr-rule-bot/milestones).
-
-### v2.0 - Scale & Resilience (Planned)
-
-**Focus**: Multi-repository support and operational excellence
-
-- **Scalability**
-  - Rate limiting with Redis/Bucket4j
-  - Circuit breaker pattern (Resilience4j)
-  - Distributed tracing (OpenTelemetry)
-
-- **Advanced Features**
-  - Multi-repository support
-  - Custom review rule engine
-  - Historical code quality trends
-  - RAG-based context augmentation
-
-- **Observability**
-  - Prometheus metrics
-  - Grafana dashboards
-  - Distributed tracing (Tempo/Jaeger)
-  - Alert management
 
 ---
 
