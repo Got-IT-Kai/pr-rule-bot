@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Multi-module project structure with 5 microservices and common module ([#71])
+- Multi-module project structure with 5 microservices and common module ([#71]) - _In Progress (PR #78 pending)_
 
 ### Changed
 - Migrated build configuration to Gradle Kotlin DSL for type-safety and better IDE support ([#55])
