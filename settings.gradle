@@ -4,6 +4,16 @@ plugins {
 
 rootProject.name = 'pr-rule-bot'
 
+// Multi-module structure for microservices architecture (ADR-0015)
+include(
+    'common',                 // Shared DTOs, events, constants
+    'webhook-service',        // GitHub webhook receiver
+    'context-service',        // Context collection and analysis
+    'policy-service',         // Policy evaluation
+    'review-service',         // AI review orchestration
+    'integration-service'     // GitHub API integration
+)
+
 develocity {
     buildScan {
         termsOfUseUrl = "https://gradle.com/help/legal-terms-of-use"

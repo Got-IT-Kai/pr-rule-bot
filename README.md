@@ -481,34 +481,64 @@ The bot supports multiple AI providers through Spring AI abstractions:
 
 ### Project Structure
 
+**Multi-Module Microservices Architecture:**
+
 ```
 pr-rule-bot/
-├── src/
-│   ├── main/java/com/code/agent/
-│   │   ├── presentation/      # Presentation layer
-│   │   │   └── web/           # REST/Webhook controllers
-│   │   ├── application/       # Application layer
-│   │   │   ├── service/       # Business logic orchestration
-│   │   │   └── listener/      # Event listeners
-│   │   ├── domain/            # Domain layer
-│   │   │   └── model/         # Domain models
-│   │   ├── infra/             # Infrastructure layer
-│   │   │   ├── ai/            # AI provider integrations (Gemini, Ollama)
-│   │   │   │   ├── config/    # AI configuration
-│   │   │   │   ├── router/    # AI provider routing
-│   │   │   │   └── service/   # AI service implementations
-│   │   │   └── github/        # GitHub integrations
-│   │   │       ├── config/    # GitHub configuration
-│   │   │       ├── event/     # GitHub event models
-│   │   │       ├── service/   # GitHub API client
-│   │   │       └── webhook/   # Webhook signature validation
-│   │   ├── config/            # Application-wide configuration
-│   │   └── cli/               # CLI mode support
-│   ├── main/resources/
-│   │   ├── application.yml    # Configuration
-│   │   └── logback-spring.xml # Logging configuration
-│   ├── test/                  # Unit tests
-│   └── integrationTest/       # Integration tests
+├── common/                    # Shared module
+│   ├── src/main/java/com/code/common/
+│   │   ├── dto/              # Data Transfer Objects
+│   │   ├── event/            # Domain events for Kafka
+│   │   ├── constant/         # Shared constants
+│   │   └── exception/        # Common exceptions
+│   └── build.gradle.kts
+│
+├── webhook-service/           # Port 8080 - GitHub webhook receiver
+│   ├── src/main/java/com/code/webhook/
+│   │   ├── controller/       # Webhook endpoints
+│   │   ├── security/         # Signature verification
+│   │   └── publisher/        # Kafka event publishing
+│   ├── src/main/resources/
+│   │   └── application.yml
+│   └── build.gradle.kts
+│
+├── context-service/           # Port 8081 - Context collection
+│   ├── src/main/java/com/code/context/
+│   │   ├── service/          # Context analysis logic
+│   │   ├── github/           # GitHub API client
+│   │   └── repository/       # Database access
+│   ├── src/main/resources/
+│   │   └── application.yml
+│   └── build.gradle.kts
+│
+├── policy-service/            # Port 8082 - Policy evaluation
+│   ├── src/main/java/com/code/policy/
+│   │   ├── service/          # Policy engine
+│   │   ├── model/            # Policy definitions
+│   │   └── repository/       # Policy storage
+│   ├── src/main/resources/
+│   │   └── application.yml
+│   └── build.gradle.kts
+│
+├── review-service/            # Port 8083 - AI review orchestration
+│   ├── src/main/java/com/code/review/
+│   │   ├── service/          # Review orchestration
+│   │   ├── ai/               # AI provider integration
+│   │   └── aggregator/       # Result aggregation
+│   ├── src/main/resources/
+│   │   └── application.yml
+│   └── build.gradle.kts
+│
+├── integration-service/       # Port 8084 - GitHub API integration
+│   ├── src/main/java/com/code/integration/
+│   │   ├── service/          # GitHub operations
+│   │   ├── checkrun/         # Check Run API
+│   │   ├── sarif/            # SARIF upload
+│   │   └── comment/          # PR comment posting
+│   ├── src/main/resources/
+│   │   └── application.yml
+│   └── build.gradle.kts
+│
 ├── docs/
 │   ├── adr/                   # Architecture Decision Records
 │   ├── code-review/           # Historical review reports
@@ -518,9 +548,12 @@ pr-rule-bot/
 ├── .github/
 │   ├── workflows/             # GitHub Actions CI/CD
 │   └── ISSUE_TEMPLATE/        # Issue templates
-├── build.gradle.kts           # Gradle build configuration (Kotlin DSL)
+├── settings.gradle.kts        # Multi-module configuration
+├── build.gradle.kts           # Root build configuration
 └── README.md                  # This file
 ```
+
+**Note**: The microservices architecture (ADR-0015) is currently under implementation. Services are scaffolded with basic Spring Boot applications. Full functionality including Kafka integration, database access, and business logic will be added in subsequent issues.
 
 ### Running Tests
 

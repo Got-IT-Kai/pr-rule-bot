@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: context-service
+
+server:
+  port: 8081
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.code.context: DEBUG
+    org.springframework.web: INFO

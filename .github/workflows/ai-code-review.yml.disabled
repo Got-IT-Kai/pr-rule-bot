@@ -68,7 +68,7 @@ jobs:
         run: chmod +x ./gradlew
 
       - name: Run AI Code Review with Gemini
-        timeout-minutes: 10
+        timeout-minutes: 20
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
