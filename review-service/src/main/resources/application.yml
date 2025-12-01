@@ -1,20 +1,64 @@
 spring:
+  config:
+    import: classpath:application-platform.yml
   application:
     name: review-service
+  kafka:
+    consumer:
+      group-id: review-service-group
+    listener:
+      ack-mode: MANUAL
+  ai:
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        model: ${OLLAMA_MODEL:qwen2.5-coder:3b}
+        options:
+          temperature: 0.2
+    vertex:
+      ai:
+        gemini:
+          project-id: ${GCP_PROJECT_ID}
+          location: ${GCP_LOCATION:us-central1}
+          chat:
+            options:
+              model: gemini-2.0-flash-001
+              temperature: 0.2
 
 server:
   port: 8083
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
+ai:
+  provider: ${AI_PROVIDER:ollama}
+  client:
+    ollama:
+      response-timeout: 10m
+      connect-timeout: 15s
+      max-tokens: 8192
+    gemini:
+      max-tokens: 100000
+  prompts:
+    ollama:
+      code-review-prompt: "classpath:/prompts/code-review.st"
+      review-merge-prompt: "classpath:/prompts/review-merge.st"
+    gemini:
+      code-review-prompt: "classpath:/prompts/code-review.st"
+      review-merge-prompt: "classpath:/prompts/review-merge.st"
 
+review:
+  reactor:
+    max-concurrent-reviews: 10
+    prefetch-size: 1
+
+kafka:
+  topics:
+    context-collected: context.collected
+    review-started: review.started
+    review-completed: review.completed
+    review-failed: review.failed
+
+# Service-specific logging overrides
 logging:
   level:
     com.code.review: DEBUG
-    org.springframework.web: INFO
+    org.springframework.ai: INFO

@@ -1,20 +1,29 @@
 spring:
+  config:
+    import: classpath:application-platform.yml
   application:
     name: context-service
 
+  kafka:
+    consumer:
+      group-id: context-service-group
+    listener:
+      ack-mode: MANUAL
+
 server:
-  port: 8081
+  port: 8082
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
+context:
+  reactor:
+    max-concurrent-requests: 5
+    prefetch-size: 1
 
+kafka:
+  topics:
+    pull-request-received: pull-request.received
+    context-collected: context.collected
+
+# Service-specific logging overrides
 logging:
   level:
     com.code.context: DEBUG
-    org.springframework.web: INFO

@@ -1,0 +1,41 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+  external_labels:
+    cluster: 'dev'
+    environment: 'local'
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Spring Boot services - Actuator metrics
+  - job_name: 'webhook-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['webhook-service-dev:8080']
+        labels:
+          service: 'webhook-service'
+
+  - job_name: 'context-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['context-service-dev:8082']
+        labels:
+          service: 'context-service'
+
+  - job_name: 'review-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['review-service-dev:8083']
+        labels:
+          service: 'review-service'
+
+  - job_name: 'integration-service'
+    metrics_path: '/actuator/prometheus'
+    static_configs:
+      - targets: ['integration-service-dev:8084']
+        labels:
+          service: 'integration-service'

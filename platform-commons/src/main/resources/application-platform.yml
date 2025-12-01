@@ -1,0 +1,68 @@
+# Common configuration for all microservices
+# This file is imported by each service via spring.config.import
+
+# GitHub API configuration (shared across services)
+github:
+  api:
+    base-url: https://api.github.com
+    token: ${GITHUB_TOKEN:}  # Required - must be set via environment variable
+    timeout:
+      connect: 5s
+      read: 30s
+    retry:
+      max-attempts: 3
+      backoff: 1s
+
+spring:
+  # Enable automatic context propagation for WebFlux reactive chains
+  reactor:
+    context-propagation: auto
+
+  # Common Kafka configuration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: all
+      retries: 3
+      properties:
+        max.in.flight.requests.per.connection: 5
+        enable.idempotence: true
+    consumer:
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.trusted.packages: "com.code.events.*"
+
+# Observability - common for all services
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    export:
+      otlp:
+        enabled: false  # Disabled - use Prometheus for metrics, OTLP only for traces
+  tracing:
+    sampling:
+      probability: 1.0
+    export:
+      otlp:
+        endpoint: ${OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:http://localhost:4318/v1/traces}
+
+# Logging - common pattern with distributed tracing
+logging:
+  pattern:
+    level: '%5p [${spring.application.name:},%X{traceId:-},%X{spanId:-}]'
+  level:
+    org.springframework.web: INFO
+    org.springframework.kafka: INFO
+    reactor.netty: INFO

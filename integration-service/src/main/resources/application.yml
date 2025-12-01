@@ -1,20 +1,33 @@
 spring:
+  config:
+    import: classpath:application-platform.yml
   application:
     name: integration-service
+
+  kafka:
+    consumer:
+      group-id: integration-service-group
+      # Enable auto-offset commit to prevent message replay on non-retryable errors
+      enable-auto-commit: false
+    listener:
+      # Manual acknowledgment mode for idempotency + compensation pattern
+      ack-mode: MANUAL
+      # Retry configuration
+      type: single
+      # Concurrency for parallel processing
+      concurrency: 1
 
 server:
   port: 8084
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
+kafka:
+  topics:
+    context-collected: context.collected
+    review-completed: review.completed
+    review-failed: review.failed
+    comment-failed: comment.failed
 
+# Service-specific logging overrides
 logging:
   level:
     com.code.integration: DEBUG
-    org.springframework.web: INFO

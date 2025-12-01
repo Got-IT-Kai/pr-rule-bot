@@ -1,0 +1,72 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.github
+
+# IDE
+.idea
+.vscode
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings
+
+# Build outputs (keep build/ for pre-built JARs with Dockerfile.runtime)
+# **/build/  # Commented out - we need JAR files for runtime Dockerfile
+**/out/
+**/target/
+**/.gradle/
+**/bin/
+
+# Test results
+**/test-results/
+**/reports/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
+*.env
+
+# Docker
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Documentation
+README.md
+CHANGELOG.md
+*.md
+docs/
+
+# Archives
+*.zip
+*.tar
+*.gz
+*.tar.gz
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*~
+
+# Node (if any)
+node_modules/
+npm-debug.log
+
+# Archives from monolith
+archive/
+
+# Internal docs (not needed in container)
+internal/

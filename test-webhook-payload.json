@@ -1,0 +1,18 @@
+{
+  "action": "opened",
+  "number": 999,
+  "repository": {
+    "owner": {"login": "testowner"},
+    "name": "testrepo",
+    "full_name": "testowner/testrepo"
+  },
+  "pull_request": {
+    "number": 999,
+    "title": "test: end-to-end flow verification",
+    "diff_url": "https://api.github.com/repos/testowner/testrepo/pulls/999.diff",
+    "html_url": "https://github.com/testowner/testrepo/pull/999",
+    "user": {"login": "test-user"},
+    "head": {"sha": "abc123def456", "ref": "feature-test"},
+    "base": {"ref": "main"}
+  }
+}

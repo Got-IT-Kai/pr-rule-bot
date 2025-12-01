@@ -1,0 +1,2 @@
+com.code.platform.config.PlatformPropertiesAutoConfiguration
+com.code.platform.config.MetricsAutoConfiguration

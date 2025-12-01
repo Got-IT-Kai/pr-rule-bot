@@ -1,0 +1,80 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://code.com/schemas/v1/webhook/pull-request-received.json",
+  "title": "PullRequestReceivedEvent",
+  "description": "Event published when a pull request webhook is received from GitHub",
+  "type": "object",
+  "required": [
+    "eventId",
+    "repositoryOwner",
+    "repositoryName",
+    "pullRequestNumber",
+    "action",
+    "title",
+    "author",
+    "commitSha",
+    "timestamp",
+    "correlationId",
+    "platform",
+    "installationId"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique event identifier"
+    },
+    "repositoryOwner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository owner (e.g., 'Got-IT-Kai')"
+    },
+    "repositoryName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Repository name (e.g., 'pr-rule-bot')"
+    },
+    "pullRequestNumber": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Pull request number"
+    },
+    "action": {
+      "type": "string",
+      "enum": ["OPENED", "SYNCHRONIZE", "REOPENED", "CLOSED", "EDITED"],
+      "description": "Action that triggered the event"
+    },
+    "title": {
+      "type": "string",
+      "description": "Pull request title"
+    },
+    "author": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Pull request author username"
+    },
+    "commitSha": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{40}$",
+      "description": "SHA of the commit"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Event occurrence time (ISO 8601)"
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID for tracing this request across services"
+    },
+    "platform": {
+      "type": "string",
+      "description": "Platform identifier (e.g., 'github')"
+    },
+    "installationId": {
+      "type": "string",
+      "description": "GitHub App installation ID"
+    }
+  }
+}

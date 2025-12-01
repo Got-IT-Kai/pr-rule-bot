@@ -1,20 +1,20 @@
 spring:
+  config:
+    import: classpath:application-platform.yml
   application:
     name: webhook-service
 
 server:
   port: 8080
 
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics
-  endpoint:
-    health:
-      show-details: always
+webhook:
+  secret: ${GITHUB_WEBHOOK_SECRET:}  # Required - must be set via environment variable
 
+kafka:
+  topics:
+    pull-request-received: pull-request.received
+
+# Service-specific logging overrides
 logging:
   level:
     com.code.webhook: DEBUG
-    org.springframework.web: INFO
