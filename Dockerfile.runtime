@@ -1,0 +1,39 @@
+# Runtime-only Dockerfile (requires pre-built JARs)
+# Usage: Build locally first with ./gradlew bootJar, then:
+#        docker build -f Dockerfile.runtime --build-arg SERVICE_NAME=webhook-service --build-arg SERVICE_PORT=8080 -t webhook-service .
+
+FROM eclipse-temurin:21-jre-alpine
+
+# Install curl for health checks
+RUN apk add --no-cache curl
+
+ARG SERVICE_NAME
+ARG SERVICE_PORT
+
+WORKDIR /app
+
+# Copy the pre-built JAR from local build
+COPY ${SERVICE_NAME}/build/libs/*.jar app.jar
+
+# Expose the service port
+EXPOSE ${SERVICE_PORT}
+
+# Add non-root user for security
+RUN addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser && \
+    chown -R appuser:appuser /app
+
+USER appuser
+
+# Java options for containerized environment
+ENV JAVA_OPTS="-XX:+UseContainerSupport \
+    -XX:MaxRAMPercentage=75.0 \
+    -XX:+UseG1GC \
+    -XX:+DisableExplicitGC \
+    -Djava.security.egd=file:/dev/./urandom"
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:${SERVICE_PORT}/actuator/health || exit 1
+
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

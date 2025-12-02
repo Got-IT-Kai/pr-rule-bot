@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://code.com/schemas/v1/integration/comment-posting-failed.json",
+  "title": "CommentPostingFailedEvent",
+  "description": "Event published when posting a PR comment to GitHub fails",
+  "type": "object",
+  "required": [
+    "eventId",
+    "reviewId",
+    "repositoryOwner",
+    "repositoryName",
+    "pullRequestNumber",
+    "errorMessage",
+    "errorType",
+    "correlationId",
+    "timestamp"
+  ],
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Unique identifier for this event instance"
+    },
+    "reviewId": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Identifier of the review that failed to post"
+    },
+    "repositoryOwner": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GitHub repository owner/organization"
+    },
+    "repositoryName": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GitHub repository name"
+    },
+    "pullRequestNumber": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "Pull request number"
+    },
+    "errorMessage": {
+      "type": "string",
+      "description": "Error message from the failed GitHub comment post"
+    },
+    "errorType": {
+      "type": "string",
+      "description": "Classification of error type (e.g., WebClientResponseException)"
+    },
+    "correlationId": {
+      "type": "string",
+      "format": "uuid",
+      "description": "ID for tracing this request across services"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 timestamp when event was created"
+    }
+  }
+}

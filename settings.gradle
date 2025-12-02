@@ -6,10 +6,10 @@ rootProject.name = 'pr-rule-bot'
 
 // Multi-module structure for microservices architecture (ADR-0015)
 include(
-    'common',                 // Shared DTOs, events, constants
+    'platform-commons',       // Minimal shared platform infrastructure (technical utilities only)
+    'shared-events',          // Shared domain events for inter-service communication
     'webhook-service',        // GitHub webhook receiver
     'context-service',        // Context collection and analysis
-    'policy-service',         // Policy evaluation
     'review-service',         // AI review orchestration
     'integration-service'     // GitHub API integration
 )

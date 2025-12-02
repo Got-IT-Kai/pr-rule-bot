@@ -1,0 +1,17 @@
+webhook:
+  secret: test-secret
+
+github:
+  api:
+    token: test-token
+    base-url: https://api.github.com
+    timeout:
+      connect: 5s
+      read: 30s
+    retry:
+      max-attempts: 3
+      backoff: 1s
+
+kafka:
+  topics:
+    pull-request-received: test-pr-topic
