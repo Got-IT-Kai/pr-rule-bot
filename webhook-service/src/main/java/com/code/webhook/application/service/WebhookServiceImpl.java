@@ -8,6 +8,8 @@ import com.code.webhook.application.port.outbound.SignatureValidator;
 import com.code.webhook.domain.model.WebhookValidationResult;
 import com.code.webhook.infrastructure.adapter.inbound.rest.dto.GitHubPullRequestEventDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.io.IOException;
 import com.code.platform.correlation.CorrelationId;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -102,7 +104,7 @@ public class WebhookServiceImpl implements WebhookService {
     private GitHubPullRequestEventDto parseWebhook(byte[] payload) {
         try {
             return objectMapper.readValue(payload, GitHubPullRequestEventDto.class);
-        } catch (Exception e) {
+        } catch (IOException e) {
             log.error("Failed to parse webhook payload", e);
             throw new WebhookParseException("Invalid webhook payload format", e);
         }

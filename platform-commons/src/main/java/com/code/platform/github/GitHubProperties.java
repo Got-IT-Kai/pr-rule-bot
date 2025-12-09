@@ -1,11 +1,7 @@
 package com.code.platform.github;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.validation.annotation.Validated;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Positive;
 import java.time.Duration;
 
 @ConfigurationProperties(prefix = "github.api")

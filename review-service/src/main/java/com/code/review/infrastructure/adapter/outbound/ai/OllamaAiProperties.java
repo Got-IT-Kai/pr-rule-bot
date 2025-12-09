@@ -2,7 +2,6 @@ package com.code.review.infrastructure.adapter.outbound.ai;
 
 import jakarta.validation.constraints.NotNull;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.core.io.Resource;
 import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;

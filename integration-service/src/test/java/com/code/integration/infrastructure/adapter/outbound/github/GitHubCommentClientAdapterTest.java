@@ -1,7 +1,6 @@
 package com.code.integration.infrastructure.adapter.outbound.github;
 
 import com.code.integration.domain.model.ReviewComment;
-import com.code.platform.metrics.MetricsHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,12 +41,9 @@ class GitHubCommentClientAdapterTest {
     static final String COMMENT_BODY = "Review completed";
     static final Long COMMENT_ID = 456L;
 
-    @Mock
-    private MetricsHelper metricsHelper;
-
     @BeforeEach
     void setUp() {
-        adapter = new GitHubCommentClientAdapter(webClient, metricsHelper);
+        adapter = new GitHubCommentClientAdapter(webClient);
     }
 
     @Nested

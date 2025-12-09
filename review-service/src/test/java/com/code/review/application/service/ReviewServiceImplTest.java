@@ -258,7 +258,6 @@ class ReviewServiceImplTest {
                     .verifyComplete();
 
             verify(eventPublisher).publish(any(com.code.events.review.ReviewStartedEvent.class));
-            verify(metricsHelper).incrementCounter("review.started.event", "status", "publish_failed");
             verify(aiModelPort, atLeastOnce()).reviewCode(anyString(), any(PrContext.class));
         }
     }

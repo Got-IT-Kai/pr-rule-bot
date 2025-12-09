@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.netty.http.client.HttpClient;
-import reactor.util.retry.Retry;
 
 import java.util.concurrent.TimeUnit;
 
@@ -43,17 +42,5 @@ public class WebClientConfiguration {
                 .defaultHeader("User-Agent", "PR-Rule-Bot/1.0")
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
-    }
-
-    @Bean
-    public Retry retryStrategy() {
-        return Retry.backoff(gitHubProperties.retry().maxAttempts(), gitHubProperties.retry().backoff())
-                .filter(throwable -> {
-                    log.debug("Evaluating retry for error: {}", throwable.getMessage());
-                    return true;
-                })
-                .doBeforeRetry(signal ->
-                    log.warn("Retrying GitHub API call (attempt {}): {}",
-                            signal.totalRetries() + 1, signal.failure().getMessage()));
     }
 }

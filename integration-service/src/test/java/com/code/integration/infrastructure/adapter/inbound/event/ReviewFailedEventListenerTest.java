@@ -5,7 +5,10 @@ import com.code.events.review.ReviewFailedEvent;
 import com.code.integration.application.port.inbound.CommentPostingService;
 import com.code.integration.application.port.outbound.EventPublisher;
 import com.code.integration.domain.model.ReviewComment;
-import com.code.platform.metrics.MetricsHelper;
+import com.code.integration.infrastructure.config.KafkaTopicProperties;
+import com.code.integration.infrastructure.support.ReactiveRetrySupport;
+import com.code.platform.dlt.DltPublisher;
+import com.code.platform.idempotency.IdempotencyStore;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -23,7 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -36,11 +39,21 @@ class ReviewFailedEventListenerTest {
     @Mock
     private EventPublisher eventPublisher;
 
-    @Mock
-    private MetricsHelper metricsHelper;
 
     @Mock
     private Acknowledgment ack;
+
+    @Mock
+    private KafkaTopicProperties topicProperties;
+
+    @Mock
+    private ReactiveRetrySupport retrySupport;
+
+    @Mock
+    private IdempotencyStore idempotencyStore;
+
+    @Mock
+    private DltPublisher dltPublisher;
 
     private ReviewFailedEventListener listener;
 
@@ -55,7 +68,23 @@ class ReviewFailedEventListenerTest {
 
     @BeforeEach
     void setUp() {
-        listener = new ReviewFailedEventListener(commentPostingService, eventPublisher, metricsHelper);
+        listener = new ReviewFailedEventListener(commentPostingService, eventPublisher,
+                idempotencyStore, dltPublisher, topicProperties, retrySupport);
+    }
+
+    private void stubRetrySupport() {
+        when(retrySupport.transientRetry(anyInt(), any())).thenReturn(reactor.util.retry.Retry.max(0));
+        when(retrySupport.unwrap(any())).thenAnswer(inv -> {
+            Throwable error = inv.getArgument(0);
+            Throwable unwrapped = reactor.core.Exceptions.unwrap(error);
+            return (reactor.core.Exceptions.isRetryExhausted(unwrapped) && unwrapped.getCause() != null)
+                    ? unwrapped.getCause()
+                    : unwrapped;
+        });
+    }
+
+    private void stubRetryTransientOnly() {
+        when(retrySupport.transientRetry(anyInt(), any())).thenReturn(reactor.util.retry.Retry.max(0));
     }
 
     private ReviewFailedEvent createEvent() {
@@ -70,12 +99,18 @@ class ReviewFailedEventListenerTest {
     @DisplayName("when handling idempotency")
     class WhenHandlingIdempotency {
 
+        @BeforeEach
+        void setUp() {
+            stubRetryTransientOnly();
+        }
+
         @Test
         @DisplayName("should skip duplicate events and acknowledge")
         void shouldSkipDuplicateEvents() throws Exception {
             ReviewFailedEvent event = createEvent();
-            CountDownLatch latch = new CountDownLatch(1); // Only first call goes through subscribe
+            CountDownLatch latch = new CountDownLatch(1);
 
+            when(idempotencyStore.tryStart(EVENT_ID)).thenReturn(true, false);
             when(commentPostingService.postComment(any())).thenReturn(Mono.empty());
             doAnswer(inv -> {
                 latch.countDown();
@@ -89,7 +124,6 @@ class ReviewFailedEventListenerTest {
 
             verify(commentPostingService, times(1)).postComment(any());
             verify(ack, times(2)).acknowledge(); // Both calls ack (first in subscribe, second in isDuplicate)
-            verify(metricsHelper).incrementCounter("event.idempotency", "result", "duplicate");
         }
 
         @Test
@@ -98,6 +132,7 @@ class ReviewFailedEventListenerTest {
             ReviewFailedEvent event = createEvent();
             CountDownLatch latch = new CountDownLatch(1);
 
+            when(idempotencyStore.tryStart(EVENT_ID)).thenReturn(true);
             when(commentPostingService.postComment(any())).thenReturn(Mono.empty());
             doAnswer(inv -> {
                 latch.countDown();
@@ -108,7 +143,6 @@ class ReviewFailedEventListenerTest {
 
             assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
-            verify(metricsHelper).incrementCounter("event.idempotency", "result", "new");
             verify(commentPostingService).postComment(any());
         }
     }
@@ -116,6 +150,12 @@ class ReviewFailedEventListenerTest {
     @Nested
     @DisplayName("when comment posting succeeds")
     class WhenCommentPostingSucceeds {
+
+        @BeforeEach
+        void setUp() {
+            stubRetryTransientOnly();
+            when(idempotencyStore.tryStart(any())).thenReturn(true);
+        }
 
         @Test
         @DisplayName("should post failure notification comment and acknowledge")
@@ -144,7 +184,6 @@ class ReviewFailedEventListenerTest {
             assertThat(capturedComment.body()).contains(ERROR_MESSAGE);
             assertThat(capturedComment.body()).contains(CORRELATION_ID);
 
-            verify(metricsHelper).incrementCounter("comment.posting", "status", "success", "type", "failure_notification");
             verify(ack).acknowledge();
         }
     }
@@ -152,6 +191,12 @@ class ReviewFailedEventListenerTest {
     @Nested
     @DisplayName("when comment posting fails")
     class WhenCommentPostingFails {
+
+        @BeforeEach
+        void setUp() {
+            stubRetrySupport();
+            when(idempotencyStore.tryStart(any())).thenReturn(true);
+        }
 
         @Test
         @DisplayName("should publish failed event and acknowledge")
@@ -171,14 +216,13 @@ class ReviewFailedEventListenerTest {
 
             assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
-            verify(metricsHelper).incrementCounter("comment.posting", "status", "failure", "type", "UNKNOWN");
             verify(eventPublisher).publish(any(CommentPostingFailedEvent.class));
             verify(ack).acknowledge();
         }
 
         @Test
-        @DisplayName("should handle failed event publish failure")
-        void shouldHandleFailedEventPublishFailure() throws Exception {
+        @DisplayName("should forward to DLT when failed event publish fails")
+        void shouldForwardToDltWhenFailedEventPublishFails() throws Exception {
             ReviewFailedEvent event = createEvent();
             CountDownLatch latch = new CountDownLatch(1);
             RuntimeException commentError = new RuntimeException("Comment posting failed");
@@ -186,17 +230,17 @@ class ReviewFailedEventListenerTest {
 
             when(commentPostingService.postComment(any())).thenReturn(Mono.error(commentError));
             when(eventPublisher.publish(any(CommentPostingFailedEvent.class))).thenReturn(Mono.error(publishError));
+            when(topicProperties.reviewFailed()).thenReturn("review-failed");
             doAnswer(inv -> {
                 latch.countDown();
                 return null;
-            }).when(ack).acknowledge();
+            }).when(dltPublisher).forwardToDlt(any(), any(), any(), any());
 
             listener.onReviewFailed(event, ack);
 
             assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
-            verify(metricsHelper).incrementCounter("comment.posting.event", "status", "publish_failed");
-            verify(ack).acknowledge();
+            verify(dltPublisher).forwardToDlt(eq("review-failed.dlt"), eq(EVENT_ID), eq(event), eq(ack));
         }
     }
 }

@@ -73,12 +73,12 @@ public class ReviewServiceImpl implements ReviewService {
         log.info("Starting review for PR #{} (reviewId: {}, contextId: {}, type: {}, correlationId: {})",
                 pullRequestNumber, reviewId, contextId, prContext.type(), correlationId);
 
+        metricsHelper.incrementCounter("review.request", "status", "started");
+
         return publishReviewStarted(reviewId, contextId, repositoryOwner, repositoryName,
                         pullRequestNumber, correlationId)
-                .doOnSuccess(v -> metricsHelper.incrementCounter("review.started.event", "status", "success"))
                 .onErrorResume(err -> {
                     log.warn("Failed to publish ReviewStartedEvent, continuing with review", err);
-                    metricsHelper.incrementCounter("review.started.event", "status", "publish_failed");
                     return Mono.empty();
                 })
                 .then(performReview(diff, prContext))
@@ -88,14 +88,13 @@ public class ReviewServiceImpl implements ReviewService {
                 .flatMap(result -> publishReviewCompleted(result).thenReturn(result))
                 .doOnSuccess(result -> {
                     log.info("Review completed for PR #{} (reviewId: {})", pullRequestNumber, reviewId);
-                    metricsHelper.incrementCounter("review.completed", "status", "success");
+                    metricsHelper.incrementCounter("review.request", "status", "success");
                     metricsHelper.recordDuration("review.processing.time",
                         Duration.between(startTime, Instant.now()), "status", "success");
                 })
                 .doOnError(err -> {
                     log.error("Review failed for PR #{} (reviewId: {})", pullRequestNumber, reviewId, err);
-                    metricsHelper.incrementCounter("review.completed", "status", "failure",
-                        "error_type", err.getClass().getSimpleName());
+                    metricsHelper.incrementCounter("review.request", "status", "failure");
                     metricsHelper.recordDuration("review.processing.time",
                         Duration.between(startTime, Instant.now()), "status", "failure");
                 })
@@ -164,7 +163,7 @@ public class ReviewServiceImpl implements ReviewService {
                 .subscribeOn(Schedulers.boundedElastic())
                 .doOnNext(tokenCount -> {
                     log.debug("Token count: {} (limit: {})", tokenCount, maxTokens);
-                    metricsHelper.recordValue("review.token.count", tokenCount);
+                    metricsHelper.recordValue("ai.token.usage", tokenCount);
                 })
                 .map(tokenCount -> tokenCount <= maxTokens);
     }

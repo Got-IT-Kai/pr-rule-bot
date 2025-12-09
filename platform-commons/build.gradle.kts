@@ -57,6 +57,9 @@ dependencies {
     // Caffeine cache for idempotency
     api("com.github.ben-manes.caffeine:caffeine:3.1.8")
 
+    // Spring Kafka for DltPublisher
+    api("org.springframework.kafka:spring-kafka")
+
     // Lombok for code generation
     compileOnly("org.projectlombok:lombok")
     annotationProcessor("org.projectlombok:lombok")
