@@ -16,11 +16,9 @@ import java.time.Duration;
 @RequiredArgsConstructor
 public class DltPublisher {
 
-    private static final int MAX_DLT_RETRIES = 3;
     private static final Duration DLT_TIMEOUT = Duration.ofSeconds(5);
 
     private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final DltRetryCounter dltRetryCounter;
     private final IdempotencyStore idempotencyStore;
     private final MetricsHelper metrics;
 
@@ -32,28 +30,17 @@ public class DltPublisher {
             return;
         }
 
-        int retryCount = dltRetryCounter.incrementAndGet(eventId);
-
-        if (retryCount > MAX_DLT_RETRIES) {
-            log.error("DLT publish failed {} times, dropping event: {}", MAX_DLT_RETRIES, eventId);
-            metrics.incrementCounter("dlt.publish", "status", "dropped", "topic", dltTopic);
-            idempotencyStore.markProcessed(eventId);
-            ack.acknowledge();
-            return;
-        }
-
         Mono.fromFuture(kafkaTemplate.send(dltTopic, eventId, event))
                 .timeout(DLT_TIMEOUT)
                 .doOnSuccess(result -> {
-                    dltRetryCounter.reset(eventId);
                     idempotencyStore.markProcessed(eventId);
                     ack.acknowledge();
                     metrics.incrementCounter("dlt.publish", "status", "success", "topic", dltTopic);
                 })
                 .doOnError(err -> {
-                    log.error("DLT publish failed (attempt {}/{}): {}", retryCount, MAX_DLT_RETRIES, err.getMessage());
-                    metrics.incrementCounter("dlt.publish", "status", "retry", "topic", dltTopic);
-                    ack.nack(Duration.ofSeconds(5));
+                    log.error("DLT publish failed, dropping event: {}", err.getMessage());
+                    metrics.incrementCounter("dlt.publish", "status", "failed", "topic", dltTopic);
+                    ack.acknowledge();
                 })
                 .subscribe(
                         unused -> {},

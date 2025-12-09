@@ -57,7 +57,7 @@ A lightweight webhook service accepts PR events, hands them to Kafka, and downst
 - Post PR comments for:
   - Completed reviews
   - Failed / skipped contexts (with reason)
-- Uses a simple compensation event on failure (no durable retry yet)
+- Uses compensation pattern with DLT for failed events
 
   ---
 
