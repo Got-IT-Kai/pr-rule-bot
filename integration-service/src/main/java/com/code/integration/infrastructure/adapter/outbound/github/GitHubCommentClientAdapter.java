@@ -2,7 +2,6 @@ package com.code.integration.infrastructure.adapter.outbound.github;
 
 import com.code.integration.application.port.outbound.GitHubCommentClient;
 import com.code.integration.domain.model.ReviewComment;
-import com.code.platform.metrics.MetricsHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -17,7 +16,6 @@ import java.util.Map;
 public final class GitHubCommentClientAdapter implements GitHubCommentClient {
 
     private final WebClient gitHubWebClient;
-    private final MetricsHelper metricsHelper;
 
     @Override
     public Mono<Long> postComment(ReviewComment comment) {
@@ -52,16 +50,8 @@ public final class GitHubCommentClientAdapter implements GitHubCommentClient {
                 .retrieve()
                 .bodyToMono(GitHubCommentResponse.class)
                 .map(GitHubCommentResponse::id)
-                .doOnSuccess(commentId -> {
-                    log.debug("Comment posted successfully with ID: {}", commentId);
-                    metricsHelper.incrementCounter("github.api.call", "endpoint", "comments", "status", "success");
-                    metricsHelper.recordValue("github.comment.length", comment.body().length());
-                })
-                .doOnError(err -> {
-                    log.error("Failed to post comment to PR #{}", comment.pullRequestNumber(), err);
-                    metricsHelper.incrementCounter("github.api.call", "endpoint", "comments", "status", "failure",
-                            "error_type", err.getClass().getSimpleName());
-                });
+                .doOnSuccess(commentId -> log.debug("Comment posted successfully with ID: {}", commentId))
+                .doOnError(err -> log.error("Failed to post comment to PR #{}", comment.pullRequestNumber(), err));
     }
 
     record GitHubCommentResponse(Long id) {}

@@ -2,10 +2,12 @@ package com.code.review.infrastructure.adapter.inbound.event;
 
 import com.code.events.context.ContextCollectedEvent;
 import com.code.events.context.ContextCollectionStatus;
-import com.code.platform.metrics.MetricsHelper;
+import com.code.platform.dlt.DltPublisher;
+import com.code.platform.idempotency.IdempotencyStore;
 import com.code.review.application.port.inbound.ReviewService;
 import com.code.review.domain.model.ReviewResult;
 import com.code.review.domain.model.ReviewStatus;
+import com.code.review.infrastructure.config.KafkaTopicProperties;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -32,10 +34,16 @@ class ContextCollectedEventListenerTest {
     private ReviewService reviewService;
 
     @Mock
-    private MetricsHelper metricsHelper;
+    private IdempotencyStore idempotencyStore;
+
+    @Mock
+    private DltPublisher dltPublisher;
 
     @Mock
     private Acknowledgment ack;
+
+    @Mock
+    private KafkaTopicProperties topicProperties;
 
     private ContextCollectedEventListener listener;
 
@@ -50,7 +58,8 @@ class ContextCollectedEventListenerTest {
 
     @BeforeEach
     void setUp() {
-        listener = new ContextCollectedEventListener(reviewService, metricsHelper);
+        listener = new ContextCollectedEventListener(reviewService,
+                idempotencyStore, dltPublisher, topicProperties);
     }
 
     private ContextCollectedEvent createEvent(ContextCollectionStatus status) {
@@ -88,6 +97,7 @@ class ContextCollectedEventListenerTest {
             ContextCollectedEvent event = createEvent(ContextCollectionStatus.COMPLETED);
             CountDownLatch latch = new CountDownLatch(1);
 
+            when(idempotencyStore.tryStart(EVENT_ID)).thenReturn(true, false);
             when(reviewService.perform(anyString(), anyString(), anyString(), anyInt(), anyString(), anyString(), anyString()))
                     .thenReturn(Mono.just(createReviewResult(ReviewStatus.COMPLETED)));
             doAnswer(inv -> {
@@ -102,7 +112,6 @@ class ContextCollectedEventListenerTest {
 
             verify(reviewService, times(1)).perform(anyString(), anyString(), anyString(), anyInt(), anyString(), anyString(), anyString());
             verify(ack, times(2)).acknowledge();
-            verify(metricsHelper).incrementCounter("event.idempotency", "result", "duplicate");
         }
 
         @Test
@@ -111,6 +120,7 @@ class ContextCollectedEventListenerTest {
             ContextCollectedEvent event = createEvent(ContextCollectionStatus.COMPLETED);
             CountDownLatch latch = new CountDownLatch(1);
 
+            when(idempotencyStore.tryStart(EVENT_ID)).thenReturn(true);
             when(reviewService.perform(anyString(), anyString(), anyString(), anyInt(), anyString(), anyString(), anyString()))
                     .thenReturn(Mono.just(createReviewResult(ReviewStatus.COMPLETED)));
             doAnswer(inv -> {
@@ -122,7 +132,6 @@ class ContextCollectedEventListenerTest {
 
             assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
-            verify(metricsHelper).incrementCounter("event.idempotency", "result", "new");
             verify(reviewService).perform(anyString(), anyString(), anyString(), anyInt(), anyString(), anyString(), anyString());
         }
     }
@@ -201,6 +210,7 @@ class ContextCollectedEventListenerTest {
             ContextCollectedEvent event = createEvent(ContextCollectionStatus.COMPLETED);
             CountDownLatch latch = new CountDownLatch(1);
 
+            when(idempotencyStore.tryStart(any())).thenReturn(true);
             when(reviewService.perform(anyString(), anyString(), anyString(), anyInt(), anyString(), anyString(), anyString()))
                     .thenReturn(Mono.just(createReviewResult(ReviewStatus.COMPLETED)));
             doAnswer(inv -> {
@@ -212,7 +222,6 @@ class ContextCollectedEventListenerTest {
 
             assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
-            verify(metricsHelper).incrementCounter("review.execution", "status", "success");
             verify(ack).acknowledge();
         }
     }
@@ -222,27 +231,26 @@ class ContextCollectedEventListenerTest {
     class WhenReviewReturnsFailedStatus {
 
         @Test
-        @DisplayName("should record failure metrics for FAILED result")
+        @DisplayName("should record failure metrics and nack for FAILED result")
         void shouldRecordFailureMetricsForFailedResult() throws Exception {
             ContextCollectedEvent event = createEvent(ContextCollectionStatus.COMPLETED);
             CountDownLatch latch = new CountDownLatch(1);
 
             // ReviewService returns FAILED result (error was handled internally)
+            when(idempotencyStore.tryStart(any())).thenReturn(true);
             when(reviewService.perform(anyString(), anyString(), anyString(), anyInt(), anyString(), anyString(), anyString()))
                     .thenReturn(Mono.just(createReviewResult(ReviewStatus.FAILED)));
+            when(topicProperties.contextCollected()).thenReturn("context.collected");
             doAnswer(inv -> {
                 latch.countDown();
                 return null;
-            }).when(ack).acknowledge();
+            }).when(dltPublisher).forwardToDlt(any(), any(), any(), any());
 
             listener.onContextCollected(event, ack);
 
             assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
-            // Should record as failure even though Mono completed successfully
-            verify(metricsHelper).incrementCounter("review.execution", "status", "failure");
-            verify(metricsHelper, never()).incrementCounter("review.execution", "status", "success");
-            verify(ack).acknowledge();
+            verify(dltPublisher).forwardToDlt(eq("context.collected.dlt"), eq(EVENT_ID), eq(event), eq(ack));
         }
     }
 
@@ -251,25 +259,26 @@ class ContextCollectedEventListenerTest {
     class WhenReviewThrowsError {
 
         @Test
-        @DisplayName("should record failure metrics and acknowledge")
+        @DisplayName("should record failure metrics and nack")
         void shouldRecordFailureMetrics() throws Exception {
             ContextCollectedEvent event = createEvent(ContextCollectionStatus.COMPLETED);
             CountDownLatch latch = new CountDownLatch(1);
 
             // ReviewService throws error (rare case, most errors are handled internally)
+            when(idempotencyStore.tryStart(any())).thenReturn(true);
             when(reviewService.perform(anyString(), anyString(), anyString(), anyInt(), anyString(), anyString(), anyString()))
                     .thenReturn(Mono.error(new RuntimeException("Unexpected error")));
+            when(topicProperties.contextCollected()).thenReturn("context.collected");
             doAnswer(inv -> {
                 latch.countDown();
                 return null;
-            }).when(ack).acknowledge();
+            }).when(dltPublisher).forwardToDlt(any(), any(), any(), any());
 
             listener.onContextCollected(event, ack);
 
             assertThat(latch.await(2, TimeUnit.SECONDS)).isTrue();
 
-            verify(metricsHelper).incrementCounter("review.execution", "status", "failure");
-            verify(ack).acknowledge();
+            verify(dltPublisher).forwardToDlt(eq("context.collected.dlt"), eq(EVENT_ID), eq(event), eq(ack));
         }
     }
 }

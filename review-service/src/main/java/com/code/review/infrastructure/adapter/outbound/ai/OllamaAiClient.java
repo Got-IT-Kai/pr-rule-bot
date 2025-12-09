@@ -1,5 +1,6 @@
 package com.code.review.infrastructure.adapter.outbound.ai;
 
+import com.code.platform.metrics.MetricsHelper;
 import com.code.review.domain.model.PrContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -20,7 +21,8 @@ final class OllamaAiClient implements AiClient {
     OllamaAiClient(
             @Autowired(required = false) OllamaChatModel ollamaChatModel,
             PromptProperties promptProperties,
-            OllamaAiProperties ollamaProperties) {
+            OllamaAiProperties ollamaProperties,
+            MetricsHelper metricsHelper) {
 
         ChatClient chatClient = ollamaChatModel != null
                 ? ChatClient.create(ollamaChatModel)
@@ -35,7 +37,8 @@ final class OllamaAiClient implements AiClient {
                 chatClient,
                 new PromptTemplate(AiClientHelper.loadResource(prompts.codeReviewPrompt())),
                 new PromptTemplate(AiClientHelper.loadResource(prompts.reviewMergePrompt())),
-                "Ollama"
+                "Ollama",
+                metricsHelper
         );
         this.maxTokens = ollamaProperties.maxTokens();
         this.modelName = "ollama";

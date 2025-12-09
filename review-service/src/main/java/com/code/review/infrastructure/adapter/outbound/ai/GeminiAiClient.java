@@ -1,5 +1,6 @@
 package com.code.review.infrastructure.adapter.outbound.ai;
 
+import com.code.platform.metrics.MetricsHelper;
 import com.code.review.domain.model.PrContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
@@ -20,7 +21,8 @@ final class GeminiAiClient implements AiClient {
     GeminiAiClient(
             @Autowired(required = false) VertexAiGeminiChatModel geminiChatModel,
             PromptProperties promptProperties,
-            GeminiAiProperties geminiProperties) {
+            GeminiAiProperties geminiProperties,
+            MetricsHelper metricsHelper) {
 
         ChatClient chatClient = geminiChatModel != null
                 ? ChatClient.create(geminiChatModel)
@@ -35,7 +37,8 @@ final class GeminiAiClient implements AiClient {
                 chatClient,
                 new PromptTemplate(AiClientHelper.loadResource(prompts.codeReviewPrompt())),
                 new PromptTemplate(AiClientHelper.loadResource(prompts.reviewMergePrompt())),
-                "Gemini"
+                "Gemini",
+                metricsHelper
         );
         this.maxTokens = geminiProperties.maxTokens();
         this.modelName = "gemini";

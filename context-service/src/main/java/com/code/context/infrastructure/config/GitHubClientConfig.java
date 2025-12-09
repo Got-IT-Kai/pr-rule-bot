@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.netty.http.client.HttpClient;
 import reactor.util.retry.Retry;
 
@@ -34,7 +35,7 @@ public class GitHubClientConfig {
                 .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, (int) properties.timeout().connect().toMillis())
                 .doOnConnected(conn -> conn
                         .addHandlerLast(new ReadTimeoutHandler(properties.timeout().read().toMillis(), TimeUnit.MILLISECONDS))
-                        .addHandlerLast(new WriteTimeoutHandler(properties.timeout().read().toMillis(), TimeUnit.MILLISECONDS)));
+                        .addHandlerLast(new WriteTimeoutHandler(properties.timeout().write().toMillis(), TimeUnit.MILLISECONDS)));
 
         return WebClient.builder()
                 .baseUrl(properties.baseUrl())
@@ -53,6 +54,14 @@ public class GitHubClientConfig {
                     if (throwable instanceof InvalidDiffException) {
                         log.debug("Skipping retry for InvalidDiffException");
                         return false;
+                    }
+                    // Don't retry 4xx client errors (401, 403, 404, 422, etc.)
+                    if (throwable instanceof WebClientResponseException e) {
+                        int status = e.getStatusCode().value();
+                        if (status >= 400 && status < 500) {
+                            log.debug("Skipping retry for client error: {}", status);
+                            return false;
+                        }
                     }
                     log.debug("Evaluating retry for error: {}", throwable.getMessage());
                     return true;

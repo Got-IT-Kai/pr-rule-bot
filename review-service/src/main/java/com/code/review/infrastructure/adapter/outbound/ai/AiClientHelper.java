@@ -1,5 +1,6 @@
 package com.code.review.infrastructure.adapter.outbound.ai;
 
+import com.code.platform.metrics.MetricsHelper;
 import com.code.review.domain.model.PrContext;
 import com.code.review.domain.model.PrType;
 import lombok.extern.slf4j.Slf4j;
@@ -21,15 +22,18 @@ final class AiClientHelper {
     private final PromptTemplate codeReviewPrompt;
     private final PromptTemplate reviewMergePrompt;
     private final String providerName;
+    private final MetricsHelper metricsHelper;
 
     AiClientHelper(ChatClient chatClient,
                    PromptTemplate codeReviewPrompt,
                    PromptTemplate reviewMergePrompt,
-                   String providerName) {
+                   String providerName,
+                   MetricsHelper metricsHelper) {
         this.chatClient = chatClient;
         this.codeReviewPrompt = codeReviewPrompt;
         this.reviewMergePrompt = reviewMergePrompt;
         this.providerName = providerName;
+        this.metricsHelper = metricsHelper;
     }
 
     static String loadResource(Resource resource) {
@@ -60,10 +64,12 @@ final class AiClientHelper {
             ));
         }
 
-        return chatClient.prompt(codeReviewPrompt.create(model))
+        Mono<String> aiCall = chatClient.prompt(codeReviewPrompt.create(model))
                 .stream()
                 .content()
                 .collect(Collectors.joining());
+
+        return metricsHelper.recordTimeWithStatus("ai.call.duration", aiCall);
     }
 
     Mono<String> mergeReviews(String combinedReviews, PrContext prContext) {
@@ -83,10 +89,12 @@ final class AiClientHelper {
                 "prContext", prContextMap
         );
 
-        return chatClient.prompt(reviewMergePrompt.create(model))
+        Mono<String> aiCall = chatClient.prompt(reviewMergePrompt.create(model))
                 .stream()
                 .content()
                 .collect(Collectors.joining());
+
+        return metricsHelper.recordTimeWithStatus("ai.call.duration", aiCall);
     }
 
     boolean isReady() {

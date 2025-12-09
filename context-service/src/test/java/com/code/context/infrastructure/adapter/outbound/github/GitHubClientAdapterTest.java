@@ -4,7 +4,6 @@ import com.code.context.domain.exception.InvalidDiffException;
 import com.code.context.domain.validator.DiffValidator;
 import com.code.context.domain.validator.ValidationReason;
 import com.code.context.domain.validator.ValidationResult;
-import com.code.platform.metrics.MetricsHelper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -42,9 +41,6 @@ class GitHubClientAdapterTest {
     @Mock
     DiffValidator diffValidator;
 
-    @Mock
-    MetricsHelper metricsHelper;
-
     GitHubClientAdapter adapter;
 
     static final String DIFF_URL = "https://api.github.com/repos/owner/repo/pulls/123";
@@ -58,7 +54,7 @@ class GitHubClientAdapterTest {
     void setUp() {
         Retry retryStrategy = Retry.max(0)
                 .filter(throwable -> !(throwable instanceof InvalidDiffException));
-        adapter = new GitHubClientAdapter(webClient, retryStrategy, diffValidator, metricsHelper);
+        adapter = new GitHubClientAdapter(webClient, retryStrategy, diffValidator);
     }
 
     @Nested
@@ -86,19 +82,6 @@ class GitHubClientAdapterTest {
             verify(webClient).get();
             verify(requestHeadersUriSpec).uri(DIFF_URL);
             verify(diffValidator).validate(DIFF);
-
-            // Verify validation metrics
-            verify(metricsHelper).incrementCounter(eq("diff.validation"),
-                    eq("status"), eq("VALID"),
-                    eq("reason"), eq("CONTENT_CHANGES"));
-
-            // Verify success metrics
-            verify(metricsHelper).incrementCounter(eq("github.api.call"),
-                    eq("endpoint"), eq("diff"),
-                    eq("status"), eq("success"));
-
-            // Verify diff size metric
-            verify(metricsHelper).recordValue(eq("github.diff.size"), eq((double) DIFF.length()));
         }
 
         @Test
@@ -113,19 +96,6 @@ class GitHubClientAdapterTest {
                     .verifyComplete();
 
             verify(diffValidator).validate(binaryDiff);
-
-            // Verify validation metrics
-            verify(metricsHelper).incrementCounter(eq("diff.validation"),
-                    eq("status"), eq("SKIP"),
-                    eq("reason"), eq("BINARY_FILE"));
-
-            // Verify success metrics (SKIP is still a successful API call)
-            verify(metricsHelper).incrementCounter(eq("github.api.call"),
-                    eq("endpoint"), eq("diff"),
-                    eq("status"), eq("success"));
-
-            // Should NOT record diff size for SKIP
-            verify(metricsHelper, never()).recordValue(eq("github.diff.size"), anyDouble());
         }
 
         @Test
@@ -148,21 +118,10 @@ class GitHubClientAdapterTest {
                     .verify();
 
             verify(diffValidator).validate(jsonResponse);
-
-            // Verify validation metrics
-            verify(metricsHelper).incrementCounter(eq("diff.validation"),
-                    eq("status"), eq("INVALID"),
-                    eq("reason"), eq("JSON_RESPONSE"));
-
-            // Verify failure metrics
-            verify(metricsHelper).incrementCounter(eq("github.api.call"),
-                    eq("endpoint"), eq("diff"),
-                    eq("status"), eq("failure"),
-                    eq("error_type"), eq("InvalidDiffException"));
         }
 
         @Test
-        @DisplayName("should handle WebClient error and record metrics")
+        @DisplayName("should handle WebClient error")
         void shouldHandleError() {
             when(responseSpec.bodyToMono(String.class))
                     .thenReturn(Mono.error(new WebClientResponseException(500, "Internal Error", null, null, null)));
@@ -172,12 +131,6 @@ class GitHubClientAdapterTest {
                         assertThat(error).hasRootCauseInstanceOf(WebClientResponseException.class);
                     })
                     .verify();
-
-            // Should record failure metrics with RetryExhaustedException (since retry wraps the original error)
-            verify(metricsHelper).incrementCounter(eq("github.api.call"),
-                    eq("endpoint"), eq("diff"),
-                    eq("status"), eq("failure"),
-                    eq("error_type"), eq("RetryExhaustedException"));
         }
     }
 

@@ -1,11 +1,13 @@
 package com.code.platform.test;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import reactor.blockhound.BlockingOperationError;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
 
+@ExtendWith(BlockHoundExtension.class)
 @SuppressWarnings("java:S2925") // Allow Thread.sleep for BlockHound test
 class BlockHoundTest {
 

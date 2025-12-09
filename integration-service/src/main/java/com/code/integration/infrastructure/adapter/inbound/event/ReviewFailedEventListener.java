@@ -6,23 +6,21 @@ import com.code.integration.application.port.inbound.CommentPostingService;
 import com.code.integration.application.port.outbound.EventPublisher;
 import com.code.integration.domain.model.ErrorType;
 import com.code.integration.domain.model.ReviewComment;
-import com.code.platform.metrics.MetricsHelper;
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.code.integration.infrastructure.config.KafkaTopicProperties;
+import com.code.integration.infrastructure.support.ReactiveRetrySupport;
+import com.code.platform.dlt.DltPublisher;
+import com.code.platform.idempotency.IdempotencyStore;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.slf4j.MDC;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClientRequestException;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
 
-import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.TimeoutException;
 
 @Slf4j
 @Component
@@ -31,73 +29,72 @@ public class ReviewFailedEventListener {
 
     private final CommentPostingService commentPostingService;
     private final EventPublisher eventPublisher;
-    private final MetricsHelper metricsHelper;
-
-    private final Cache<String, Boolean> processedEvents = Caffeine.newBuilder()
-            .expireAfterWrite(Duration.ofHours(24))
-            .maximumSize(10_000)
-            .build();
+    private final IdempotencyStore idempotencyStore;
+    private final DltPublisher dltPublisher;
+    private final KafkaTopicProperties topicProperties;
+    private final ReactiveRetrySupport retrySupport;
 
     @KafkaListener(
         topics = "${kafka.topics.review-failed}",
         groupId = "${spring.kafka.consumer.group-id}"
     )
     public void onReviewFailed(ReviewFailedEvent event, Acknowledgment ack) {
-        log.info("Received ReviewFailed event: eventId={}, reviewId={}, repo={}/{}, PR #{}",
-            event.eventId(), event.reviewId(), event.repositoryOwner(),
-            event.repositoryName(), event.pullRequestNumber());
+        try (MDC.MDCCloseable ignored = MDC.putCloseable("correlationId", event.correlationId())) {
+            log.info("Received ReviewFailed event: eventId={}, reviewId={}, repo={}/{}, PR #{}",
+                event.eventId(), event.reviewId(), event.repositoryOwner(),
+                event.repositoryName(), event.pullRequestNumber());
 
-        if (isDuplicate(event.eventId())) {
-            ack.acknowledge();
-            return;
+            if (!idempotencyStore.tryStart(event.eventId())) {
+                log.info("Duplicate event detected: {}, skipping", event.eventId());
+                ack.acknowledge();
+                return;
+            }
+
+            String failureComment = buildFailureComment(event);
+            ReviewComment comment = new ReviewComment(
+                    event.repositoryOwner(),
+                    event.repositoryName(),
+                    event.pullRequestNumber(),
+                    failureComment,
+                    List.of()
+            );
+
+            log.debug("Posting failure comment for PR #{}: reviewId={}", event.pullRequestNumber(), event.reviewId());
+
+            commentPostingService.postComment(comment)
+                .retryWhen(retrySupport.transientRetry(3, java.time.Duration.ofMillis(100)))
+                .doOnSuccess(result ->
+                    log.info("Successfully posted failure comment for PR #{}", event.pullRequestNumber())
+                )
+                .onErrorResume(error -> {
+                    Throwable cause = retrySupport.unwrap(error);
+                    ErrorType errorType = ErrorType.from(cause);
+
+                    return publishFailedEvent(event, cause, errorType.name())
+                        .doOnError(publishErr ->
+                            log.error("Failed to publish CommentPostingFailedEvent: reviewId={}, PR #{}",
+                                event.reviewId(), event.pullRequestNumber(), publishErr)
+                        )
+                        .onErrorResume(pubErr -> {
+                            log.error("Both comment posting and failure event publish failed, forwarding to DLT", pubErr);
+                            return Mono.error(pubErr);
+                        });
+                })
+                .then()
+                .doOnSuccess(v -> {
+                    idempotencyStore.markProcessed(event.eventId());
+                    ack.acknowledge();
+                })
+                .doOnError(err -> {
+                    String dltTopic = topicProperties.reviewFailed() + ".dlt";
+                    dltPublisher.forwardToDlt(dltTopic, event.eventId(), event, ack);
+                })
+                .subscribe(
+                        unused -> {},
+                        error -> log.error("Unexpected error in ReviewFailed event handling: {}",
+                                error.getMessage(), error)
+                );
         }
-
-        String failureComment = buildFailureComment(event);
-        ReviewComment comment = new ReviewComment(
-                event.repositoryOwner(),
-                event.repositoryName(),
-                event.pullRequestNumber(),
-                failureComment,
-                List.of()
-        );
-
-        log.debug("Posting failure comment for PR #{}: reviewId={}", event.pullRequestNumber(), event.reviewId());
-
-        commentPostingService.postComment(comment)
-            .doOnSuccess(result -> {
-                metricsHelper.incrementCounter("comment.posting", "status", "success", "type", "failure_notification");
-                log.info("Successfully posted failure comment for PR #{}", event.pullRequestNumber());
-            })
-            .onErrorResume(error -> {
-                ErrorType errorType = ErrorType.from(error);
-                metricsHelper.incrementCounter("comment.posting", "status", "failure", "type", errorType.name());
-
-                return publishFailedEvent(event, error, errorType.name())
-                    .doOnError(publishErr -> {
-                        log.error("Failed to publish CommentPostingFailedEvent: reviewId={}, PR #{}",
-                            event.reviewId(), event.pullRequestNumber(), publishErr);
-                        metricsHelper.incrementCounter("comment.posting.event", "status", "publish_failed");
-                    })
-                    .onErrorResume(pubErr -> Mono.empty());
-            })
-            .then()
-            .doFinally(signal -> ack.acknowledge())
-            .subscribe();
-    }
-
-    private boolean isDuplicate(String eventId) {
-        if (eventId == null) {
-            return false;
-        }
-
-        Boolean previous = processedEvents.asMap().putIfAbsent(eventId, Boolean.TRUE);
-        if (previous != null) {
-            metricsHelper.incrementCounter("event.idempotency", "result", "duplicate");
-            log.info("Duplicate event detected: {}, skipping", eventId);
-            return true;
-        }
-        metricsHelper.incrementCounter("event.idempotency", "result", "new");
-        return false;
     }
 
     private String buildFailureComment(ReviewFailedEvent event) {
@@ -114,7 +111,7 @@ public class ReviewFailedEventListener {
             """, event.errorMessage(), event.correlationId());
     }
 
-    private reactor.core.publisher.Mono<Void> publishFailedEvent(ReviewFailedEvent event, Throwable error, String errorType) {
+    private Mono<Void> publishFailedEvent(ReviewFailedEvent event, Throwable error, String errorType) {
         CommentPostingFailedEvent failedEvent = new CommentPostingFailedEvent(
                 UUID.randomUUID().toString(),
                 event.reviewId(),
