@@ -107,3 +107,7 @@ tasks.jacocoTestCoverageVerification {
         }
     }
 }
+
+tasks.named<org.springframework.boot.gradle.tasks.bundling.BootBuildImage>("bootBuildImage") {
+    imagePlatform.set("linux/amd64")
+}

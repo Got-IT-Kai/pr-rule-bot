@@ -1,0 +1,59 @@
+# k8s-context.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: context-service
+  namespace: pr-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: context-service
+  template:
+    metadata:
+      labels:
+        app: context-service
+    spec:
+      containers:
+        - name: context-service
+          image: asia-northeast3-docker.pkg.dev/pr-rule-bot/pr-bot/context-service:latest
+          ports:
+            - containerPort: 8082
+          envFrom:
+            - configMapRef:
+                name: pr-bot-config
+            - secretRef:
+                name: pr-bot-secrets
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8082
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8082
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: context-service
+  namespace: pr-bot
+spec:
+  type: ClusterIP
+  selector:
+    app: context-service
+  ports:
+    - port: 8082
+      targetPort: 8082
+

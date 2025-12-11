@@ -1,0 +1,59 @@
+# k8s-integration.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: integration-service
+  namespace: pr-bot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: integration-service
+  template:
+    metadata:
+      labels:
+        app: integration-service
+    spec:
+      containers:
+        - name: integration-service
+          image: asia-northeast3-docker.pkg.dev/pr-rule-bot/pr-bot/integration-service:latest
+          ports:
+            - containerPort: 8084
+          envFrom:
+            - configMapRef:
+                name: pr-bot-config
+            - secretRef:
+                name: pr-bot-secrets
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8084
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8084
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "512Mi"
+              cpu: "500m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: integration-service
+  namespace: pr-bot
+spec:
+  type: ClusterIP
+  selector:
+    app: integration-service
+  ports:
+    - port: 8084
+      targetPort: 8084
+

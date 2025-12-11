@@ -59,7 +59,15 @@ A lightweight webhook service accepts PR events, hands them to Kafka, and downst
   - Failed / skipped contexts (with reason)
 - Uses compensation pattern with DLT for failed events
 
-  ---
+---
+
+## Self-review on GKE
+
+Simple self-review setup on GKE Autopilot.
+
+The MSA architecture requires always-on infrastructure, not ephemeral CI runners.
+
+---
 
 ## Run locally
 
@@ -75,3 +83,4 @@ A lightweight webhook service accepts PR events, hands them to Kafka, and downst
 docker-compose up -d              # start Kafka + observability stack
 ./gradlew build                   # build all modules
 ./gradlew :webhook-service:bootRun   # run a single service
+```
