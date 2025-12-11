@@ -18,22 +18,22 @@ Total Issues: [count] (Blocker: [B] | Critical: [C] | Major: [M] | Minor: [m] | 
 
 If no issues found: "No significant issues found in this code review."
 
-If issues found, group by severity:
+If issues found, group by severity with code snippets:
 
 ### Blocker Issues
-[List blocker issues]
+- "code snippet" - description (Fix: solution)
 
 ### Critical Issues
-[List critical issues]
+- "code snippet" - description (Fix: solution)
 
 ### Major Issues
-[List major issues]
+- "code snippet" - description (Fix: solution)
 
 ### Minor Issues
-[List minor issues]
+- "code snippet" - description (Fix: solution)
 
 ### Informational
-[List info items]
+- "code snippet" - observation
 
 ---
 
