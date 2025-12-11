@@ -1,0 +1,137 @@
+# Strimzi KafkaTopic CRDs
+# https://strimzi.io/docs/operators/latest/deploying.html#ref-operator-topic-str
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: pull-request.received
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000  # 7 days
+    segment.bytes: 1073741824  # 1GB
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: pull-request.received.dlt
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 2592000000  # 30 days (longer for DLT)
+    segment.bytes: 1073741824
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: context.collected
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000  # 7 days
+    segment.bytes: 1073741824
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: context.collected.dlt
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 2592000000  # 30 days
+    segment.bytes: 1073741824
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: review.completed
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000  # 7 days
+    segment.bytes: 1073741824
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: review.completed.dlt
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 2592000000  # 30 days
+    segment.bytes: 1073741824
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: review.failed
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000  # 7 days
+    segment.bytes: 1073741824
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: review.failed.dlt
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 2592000000  # 30 days
+    segment.bytes: 1073741824
+
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: comment.failed
+  namespace: pr-bot
+  labels:
+    strimzi.io/cluster: kafka
+spec:
+  partitions: 3
+  replicas: 1
+  config:
+    retention.ms: 604800000  # 7 days
+    segment.bytes: 1073741824

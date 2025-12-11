@@ -12,3 +12,4 @@ Concise records of non-obvious decisions with trade-offs. Keep them short; code 
 - [ADR-0020](0020-single-tenant-auth-posture.md): PAT single-tenant auth, no internal mTLS/JWT
 - [ADR-0021](0021-diff-validation-and-skip-strategy.md): Diff validation and skip to save AI cycles
 - [ADR-0022](0022-event-schema-format.md): JSON Schema now; Avro + registry deferred
+- [ADR-0023](0023-gke-self-review.md): GKE Autopilot for always-on self-review

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pr-bot-config
+  namespace: pr-bot
+data:
+  # Kafka
+  KAFKA_BOOTSTRAP_SERVERS: "kafka:9092"
+
+  # Spring
+  SPRING_PROFILES_ACTIVE: "gke"
+
+  # AI Provider
+  AI_PROVIDER: "gemini"

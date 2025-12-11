@@ -1,2 +1,3 @@
 com.code.platform.config.PlatformPropertiesAutoConfiguration
 com.code.platform.config.MetricsAutoConfiguration
+com.code.platform.config.IdempotencyAutoConfiguration
