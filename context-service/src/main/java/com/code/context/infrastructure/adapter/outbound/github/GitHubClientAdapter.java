@@ -15,7 +15,7 @@ import reactor.util.retry.Retry;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public final class GitHubClientAdapter implements GitHubClient {
+public class GitHubClientAdapter implements GitHubClient {
 
     private final WebClient gitHubWebClient;
     private final Retry retryStrategy;
