@@ -51,6 +51,9 @@ public class ReviewServiceImpl implements ReviewService {
     private static final Pattern DIFF_GIT_PATTERN =
             Pattern.compile("^diff --git a/(\\S+) b/(\\S+)$", Pattern.MULTILINE);
 
+    private static final Pattern DELETED_LINE_PATTERN =
+            Pattern.compile("^-(?!--).*\\R?", Pattern.MULTILINE);
+
     private String extractFilename(String diffChunk) {
         if (diffChunk == null || diffChunk.isBlank()) {
             return "unknown-file";
@@ -73,6 +76,10 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         return "unknown-file";
+    }
+
+    private String removeDeletedLines(String diff) {
+        return DELETED_LINE_PATTERN.matcher(diff).replaceAll("");
     }
 
     @Override
@@ -149,8 +156,9 @@ public class ReviewServiceImpl implements ReviewService {
                 .filterWhen(chunk -> isWithinTokenLimit(chunk, maxTokens))
                 .flatMap(
                         chunk -> {
-                            String filename =  extractFilename(chunk);
-                            return aiModelPort.reviewCode(chunk, prContext)
+                            String filename = extractFilename(chunk);
+                            String filteredChunk = removeDeletedLines(chunk);
+                            return aiModelPort.reviewCode(filteredChunk, prContext)
                                     .map(review -> new FileReview(filename, review));
                         },
                         reactorProperties.maxConcurrentReviews(),

@@ -333,4 +333,73 @@ class ReviewServiceImplTest {
             assertThat(captured.type().name()).isEqualTo("UNKNOWN");
         }
     }
+
+    @Nested
+    @DisplayName("when filtering deleted lines")
+    class WhenFilteringDeletedLines {
+
+        @BeforeEach
+        void setUp() {
+            when(aiModelPort.maxTokens()).thenReturn(MAX_TOKENS);
+            when(encoding.countTokens(anyString())).thenReturn(50);
+            when(aiModelPort.mergeReviews(anyString(), any(PrContext.class))).thenReturn(Mono.just("Merged"));
+        }
+
+        @Test
+        @DisplayName("should remove deleted lines from diff")
+        void shouldRemoveDeletedLines() {
+            String diffWithDeleted = """
+                    diff --git a/test.java b/test.java
+                    --- a/test.java
+                    +++ b/test.java
+                    @@ -1,3 +1,3 @@
+                     public class Test {
+                    -    private String oldField;
+                    +    private String newField;
+                     }
+                    """;
+
+            when(aiModelPort.reviewCode(anyString(), any(PrContext.class))).thenReturn(Mono.just("OK"));
+
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, diffWithDeleted, CORRELATION_ID))
+                    .expectNextMatches(result -> result.status() == ReviewStatus.COMPLETED)
+                    .verifyComplete();
+
+            ArgumentCaptor<String> diffCaptor = ArgumentCaptor.forClass(String.class);
+            verify(aiModelPort).reviewCode(diffCaptor.capture(), any(PrContext.class));
+
+            String capturedDiff = diffCaptor.getValue();
+            assertThat(capturedDiff).doesNotContain("-    private String oldField;");
+            assertThat(capturedDiff).contains("+    private String newField;");
+            assertThat(capturedDiff).contains("--- a/test.java");  // File header preserved
+        }
+
+        @Test
+        @DisplayName("should preserve file headers with --- prefix")
+        void shouldPreserveFileHeaders() {
+            String diff = """
+                    diff --git a/old.java b/new.java
+                    deleted file mode 100644
+                    --- a/old.java
+                    +++ /dev/null
+                    @@ -1,5 +0,0 @@
+                    -deleted line 1
+                    -deleted line 2
+                    """;
+
+            when(aiModelPort.reviewCode(anyString(), any(PrContext.class))).thenReturn(Mono.just("OK"));
+
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, diff, CORRELATION_ID))
+                    .expectNextMatches(result -> result.status() == ReviewStatus.COMPLETED)
+                    .verifyComplete();
+
+            ArgumentCaptor<String> diffCaptor = ArgumentCaptor.forClass(String.class);
+            verify(aiModelPort).reviewCode(diffCaptor.capture(), any(PrContext.class));
+
+            String capturedDiff = diffCaptor.getValue();
+            assertThat(capturedDiff).contains("--- a/old.java");
+            assertThat(capturedDiff).doesNotContain("-deleted line 1");
+            assertThat(capturedDiff).doesNotContain("-deleted line 2");
+        }
+    }
 }
