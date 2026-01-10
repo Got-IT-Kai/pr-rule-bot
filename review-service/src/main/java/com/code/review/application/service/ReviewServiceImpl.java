@@ -49,7 +49,7 @@ public class ReviewServiceImpl implements ReviewService {
             Pattern.compile("^\\+\\+\\+ b/(.+)$", Pattern.MULTILINE);
 
     private static final Pattern DIFF_GIT_PATTERN =
-            Pattern.compile("^diff --git a/(.+?) b/(.+?)$", Pattern.MULTILINE);
+            Pattern.compile("^diff --git a/(\\S+) b/(\\S+)$", Pattern.MULTILINE);
 
     private String extractFilename(String diffChunk) {
         if (diffChunk == null || diffChunk.isBlank()) {
