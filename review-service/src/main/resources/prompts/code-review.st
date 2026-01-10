@@ -14,6 +14,12 @@ SEVERITY LEVELS:
 - MINOR: Style, readability
 - INFO: Observations only
 
+SCOPE:
+- MUST: Focus only on code changes shown in the diff (lines with +/-)
+- MUST NOT: Suggest changes to code not visible in the diff
+- MUST NOT: Assume patterns exist or don't exist outside the diff context
+- If you cannot verify something from the diff alone, note it as "Cannot verify without full context"
+
 INSTRUCTIONS:
 1. Only report real issues - don't invent problems
 2. Include the relevant code snippet (1-3 lines)
