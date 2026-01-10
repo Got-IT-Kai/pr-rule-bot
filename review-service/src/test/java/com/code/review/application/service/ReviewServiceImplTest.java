@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -43,6 +44,9 @@ class ReviewServiceImplTest {
     @Mock
     MetricsHelper metricsHelper;
 
+    @Captor
+    ArgumentCaptor<String> mergeReviewsCaptor;
+
     ReactorProperties reactorProperties = new ReactorProperties(10, 1);
 
     ReviewServiceImpl reviewService;
@@ -55,7 +59,7 @@ class ReviewServiceImplTest {
     static final String PR_TITLE = "fix: critical bug";
     static final String CORRELATION_ID = "corr-123";
 
-    final String diff = """
+    final String multiFileDiff = """
             diff --git a/src/main/java/com/example/service/UserService.java b/src/main/java/com/example/service/UserService.java
             --- a/src/main/java/com/example/service/UserService.java
             +++ b/src/main/java/com/example/service/UserService.java
@@ -131,19 +135,24 @@ class ReviewServiceImplTest {
                     .verifyComplete();
 
             verify(aiModelPort, times(1)).reviewCode(anyString(), any(PrContext.class));
-            verify(aiModelPort, times(1)).mergeReviews("OK", PrContext.from(PR_TITLE));
+            ArgumentCaptor<String> mergedCaptor = ArgumentCaptor.forClass(String.class);
+            verify(aiModelPort).mergeReviews(mergedCaptor.capture(), eq(PrContext.from(PR_TITLE)));
+            assertThat(mergedCaptor.getValue())
+                    .contains("[FILE: src/main/java/com/example/service/UserService.java]")
+                    .contains("\nOK");
         }
 
         @Test
         @DisplayName("should merge multiple file reviews")
         void shouldMergeMultipleFileReviews() {
             when(encoding.countTokens(anyString())).thenReturn(50);
-            when(aiModelPort.reviewCode(anyString(), any(PrContext.class)))
-                    .thenReturn(Mono.just("OK1"))
+            when(aiModelPort.reviewCode(argThat(s -> s != null && s.contains("UserService.java")), any(PrContext.class)))
+                    .thenReturn(Mono.just("OK1"));
+            when(aiModelPort.reviewCode(argThat(s -> s != null && s.contains("OrderService.java")), any(PrContext.class)))
                     .thenReturn(Mono.just("OK2"));
             when(aiModelPort.mergeReviews(anyString(), any(PrContext.class))).thenReturn(Mono.just("Merged reviews"));
 
-            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, diff, CORRELATION_ID))
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, multiFileDiff, CORRELATION_ID))
                     .expectNextMatches(result ->
                             result.status() == ReviewStatus.COMPLETED &&
                             result.reviewComment().equals("Merged reviews"))
@@ -152,7 +161,9 @@ class ReviewServiceImplTest {
             ArgumentCaptor<String> mergedCaptor = ArgumentCaptor.forClass(String.class);
             verify(aiModelPort).mergeReviews(mergedCaptor.capture(), any(PrContext.class));
             assertThat(mergedCaptor.getValue())
+                    .contains("[FILE: src/main/java/com/example/service/UserService.java]")
                     .contains("OK1")
+                    .contains("[FILE: src/main/java/com/example/service/OrderService.java]")
                     .contains("OK2")
                     .contains("--- Next Review ---");
         }
@@ -185,11 +196,17 @@ class ReviewServiceImplTest {
         @Test
         @DisplayName("should skip files exceeding token limit")
         void shouldSkipFilesExceedingTokenLimit() {
-            when(encoding.countTokens(anyString())).thenReturn(5000, 10000, 5000);
+            when(encoding.countTokens(anyString())).thenAnswer(inv -> {
+                String text = inv.getArgument(0, String.class);
+                if (text.contains("diff --git") && text.contains("OrderService.java")) {
+                    return 10000;
+                }
+                return 5000;
+            });
             when(aiModelPort.reviewCode(anyString(), any(PrContext.class))).thenReturn(Mono.just("SMALL"));
-            when(aiModelPort.mergeReviews("SMALL", PrContext.from(PR_TITLE))).thenReturn(Mono.just("MERGED"));
+            when(aiModelPort.mergeReviews(anyString(), any(PrContext.class))).thenReturn(Mono.just("MERGED"));
 
-            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, diff, CORRELATION_ID))
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, multiFileDiff, CORRELATION_ID))
                     .expectNextMatches(result ->
                             result.status() == ReviewStatus.COMPLETED &&
                             result.reviewComment().contains("MERGED") &&
@@ -198,16 +215,24 @@ class ReviewServiceImplTest {
                     .verifyComplete();
 
             verify(aiModelPort, times(1)).reviewCode(anyString(), any(PrContext.class));
-            verify(aiModelPort, times(1)).mergeReviews("SMALL", PrContext.from(PR_TITLE));
+            ArgumentCaptor<String> mergedCaptor = ArgumentCaptor.forClass(String.class);
+            verify(aiModelPort).mergeReviews(mergedCaptor.capture(), any(PrContext.class));
+            assertThat(mergedCaptor.getValue()).contains("[FILE:");
         }
 
         @Test
         @DisplayName("should reject merge when combined reviews exceed token limit")
         void shouldRejectMergeWhenCombinedExceedsTokenLimit() {
-            when(encoding.countTokens(anyString())).thenReturn(5000, 5000, 10000);
+            when(encoding.countTokens(anyString())).thenAnswer(inv -> {
+                String text = inv.getArgument(0, String.class);
+                if (text.contains("--- Next Review ---")) {
+                    return 10000;
+                }
+                return 5000;
+            });
             when(aiModelPort.reviewCode(anyString(), any(PrContext.class))).thenReturn(Mono.just("SMALL"));
 
-            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, diff, CORRELATION_ID))
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, multiFileDiff, CORRELATION_ID))
                     .expectNextMatches(result ->
                             result.status() == ReviewStatus.COMPLETED &&
                             result.reviewComment().contains("Combined reviews exceed the 7680-token limit"))
@@ -234,7 +259,7 @@ class ReviewServiceImplTest {
             when(aiModelPort.reviewCode(anyString(), any(PrContext.class)))
                     .thenReturn(Mono.error(new RuntimeException("AI service unavailable")));
 
-            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, diff, CORRELATION_ID))
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, multiFileDiff, CORRELATION_ID))
                     .expectNextMatches(result ->
                             result.status() == ReviewStatus.FAILED &&
                             result.reviewComment().contains("Review failed") &&
@@ -251,7 +276,7 @@ class ReviewServiceImplTest {
             when(aiModelPort.reviewCode(anyString(), any(PrContext.class))).thenReturn(Mono.just("OK"));
             when(aiModelPort.mergeReviews(anyString(), any(PrContext.class))).thenReturn(Mono.just("OK"));
 
-            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, diff, CORRELATION_ID))
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, PR_TITLE, multiFileDiff, CORRELATION_ID))
                     .expectNextMatches(result ->
                             result.status() == ReviewStatus.COMPLETED &&
                             result.reviewComment().equals("OK"))
@@ -279,7 +304,7 @@ class ReviewServiceImplTest {
             when(aiModelPort.mergeReviews(anyString(), any(PrContext.class))).thenReturn(Mono.just("Merged"));
 
             String prTitle = "fix: critical authentication bug";
-            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, prTitle, diff, CORRELATION_ID))
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, prTitle, multiFileDiff, CORRELATION_ID))
                     .expectNextMatches(result -> result.status() == ReviewStatus.COMPLETED)
                     .verifyComplete();
 
@@ -297,7 +322,7 @@ class ReviewServiceImplTest {
             when(aiModelPort.reviewCode(anyString(), any(PrContext.class))).thenReturn(Mono.just("Review"));
             when(aiModelPort.mergeReviews(anyString(), any(PrContext.class))).thenReturn(Mono.just("Merged"));
 
-            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, null, diff, CORRELATION_ID))
+            StepVerifier.create(reviewService.perform(CONTEXT_ID, REPO_OWNER, REPO_NAME, PR_NUMBER, null, multiFileDiff, CORRELATION_ID))
                     .expectNextMatches(result -> result.status() == ReviewStatus.COMPLETED)
                     .verifyComplete();
 

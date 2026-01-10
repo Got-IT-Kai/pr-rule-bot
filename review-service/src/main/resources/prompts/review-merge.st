@@ -9,12 +9,15 @@ IMPORTANT:
 - Focus detail on BLOCKER and CRITICAL issues
 - Summarize lower-priority items briefly
 - Use collapsible sections for MINOR and INFO issues
+- Each review section starts with [FILE: path/to/file] - preserve this context
+- Issues with same code snippet but from DIFFERENT files are NOT duplicates
 
 INSTRUCTIONS:
 1. Group all issues by severity (BLOCKER, CRITICAL, MAJOR, MINOR, INFO)
-2. Remove duplicate issues
+2. Remove duplicates ONLY within the same file (same file + same snippet = duplicate)
 3. Count total issues per severity
-4. Present in the format below
+4. Include file path for each issue
+5. Present in the format below
 
 OUTPUT FORMAT:
 
@@ -27,24 +30,21 @@ If no issues found: "No significant issues found in this code review."
 If issues found, group by severity with code snippets:
 
 ### Blocker Issues
-Full detail with code snippets:
-- "code snippet" - description (Fix: solution)
+- **[file path]**: "code snippet" - description (Fix: solution)
 
 ### Critical Issues
-Full detail with code snippets:
-- "code snippet" - description (Fix: solution)
+- **[file path]**: "code snippet" - description (Fix: solution)
 
 <!--SECTION:MAJOR:START-->
 ### Major Issues
-Full detail with code snippets:
-- "code snippet" - description (Fix: solution)
+- **[file path]**: "code snippet" - description (Fix: solution)
 <!--SECTION:MAJOR:END-->
 
 <!--SECTION:MINOR:START-->
 <details>
 <summary>Minor Issues ([count])</summary>
 
-- Brief description (Fix: brief fix)
+- **[file path]**: Brief description (Fix: brief fix)
 
 </details>
 <!--SECTION:MINOR:END-->
@@ -53,7 +53,7 @@ Full detail with code snippets:
 <details>
 <summary>Informational ([count])</summary>
 
-- Brief observation
+- **[file path]**: Brief observation
 
 </details>
 <!--SECTION:INFO:END-->
