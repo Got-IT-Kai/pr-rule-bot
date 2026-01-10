@@ -14,11 +14,18 @@ SEVERITY LEVELS:
 - MINOR: Style, readability
 - INFO: Observations only
 
+SCOPE:
+- Review ONLY `+` lines (added code)
+- DO NOT review `-` lines (deleted) or ` ` lines (unchanged context)
+- DO NOT suggest changes outside the diff
+- If unverifiable, state "Cannot verify"
+
 INSTRUCTIONS:
 1. Only report real issues - don't invent problems
 2. Include the relevant code snippet (1-3 lines)
 3. Explain WHY it's an issue and HOW to fix it
 4. If code is good, respond: "No issues found."
+5. Reference line numbers from the diff (use new-file line numbers from @@ hunks)
 
 $if(projectRules)$
 PROJECT RULES:
@@ -26,11 +33,11 @@ $projectRules$
 $endif$
 
 OUTPUT FORMAT:
-[SEVERITY] "code snippet" | [description] | Fix: [how]
+[SEVERITY] Line [number]: "code snippet" | [description] | Fix: [how]
 
 Example:
-[CRITICAL] "if (user.getName())" | NullPointerException risk - user not null-checked | Fix: Add null check before access
-[MAJOR] "for (Order o : orders)" | N+1 query in loop | Fix: Use batch fetch or JOIN
+[CRITICAL] Line 42: "if (user.getName())" | NullPointerException risk - user not null-checked | Fix: Add null check before access
+[MAJOR] Line 15: "for (Order o : orders)" | N+1 query in loop | Fix: Use batch fetch or JOIN
 
 If no issues: "No issues found."
 

@@ -6,6 +6,7 @@ import com.code.review.application.port.outbound.EventPublisher;
 import com.code.events.review.ReviewCompletedEvent;
 import com.code.events.review.ReviewFailedEvent;
 import com.code.events.review.ReviewStartedEvent;
+import com.code.review.domain.model.FileReview;
 import com.code.review.domain.model.PrContext;
 import com.code.review.domain.model.ReviewResult;
 import com.code.review.domain.model.ReviewStatus;
@@ -22,7 +23,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -41,6 +44,43 @@ public class ReviewServiceImpl implements ReviewService {
     private final Encoding encoding;
     private final ReactorProperties reactorProperties;
     private final MetricsHelper metricsHelper;
+
+    private static final Pattern FILE_PATH_PATTERN =
+            Pattern.compile("^\\+\\+\\+ b/(.+)$", Pattern.MULTILINE);
+
+    private static final Pattern DIFF_GIT_PATTERN =
+            Pattern.compile("^diff --git a/(\\S+) b/(\\S+)$", Pattern.MULTILINE);
+
+    private static final Pattern DELETED_LINE_PATTERN =
+            Pattern.compile("^-(?!--).*\\R?", Pattern.MULTILINE);
+
+    private String extractFilename(String diffChunk) {
+        if (diffChunk == null || diffChunk.isBlank()) {
+            return "unknown-file";
+        }
+
+        Matcher filePathMatcher = FILE_PATH_PATTERN.matcher(diffChunk);
+        if (filePathMatcher.find()) {
+            String path = filePathMatcher.group(1).trim();
+            if (!path.isBlank() && !path.equals("/dev/null")) {
+                return path;
+            }
+        }
+
+        Matcher diffGitMatcher = DIFF_GIT_PATTERN.matcher(diffChunk);
+        if (diffGitMatcher.find()) {
+            String path = diffGitMatcher.group(2).trim(); // b/<new>
+            if (!path.isBlank()) {
+                return path;
+            }
+        }
+
+        return "unknown-file";
+    }
+
+    private String removeDeletedLines(String diff) {
+        return DELETED_LINE_PATTERN.matcher(diff).replaceAll("");
+    }
 
     @Override
     public Mono<ReviewResult> perform(
@@ -115,12 +155,17 @@ public class ReviewServiceImpl implements ReviewService {
         return Flux.fromIterable(fileDiffs)
                 .filterWhen(chunk -> isWithinTokenLimit(chunk, maxTokens))
                 .flatMap(
-                        chunk -> aiModelPort.reviewCode(chunk, prContext),
+                        chunk -> {
+                            String filename = extractFilename(chunk);
+                            String filteredChunk = removeDeletedLines(chunk);
+                            return aiModelPort.reviewCode(filteredChunk, prContext)
+                                    .map(review -> new FileReview(filename, review));
+                        },
                         reactorProperties.maxConcurrentReviews(),
                         reactorProperties.prefetchSize()
                 )
                 .collectList()
-                .flatMap(reviews -> synthesizeReviews(reviews, fileDiffs.size() - reviews.size(), maxTokens, prContext));
+                .flatMap(fileReviews -> synthesizeReviews(fileReviews, fileDiffs.size() - fileReviews.size(), maxTokens, prContext));
     }
 
     private List<String> splitDiffIntoFiles(String diff) {
@@ -134,12 +179,14 @@ public class ReviewServiceImpl implements ReviewService {
                 .toList();
     }
 
-    private Mono<String> synthesizeReviews(List<String> individualReviews, int missingCount, int maxTokens, PrContext prContext) {
-        if (individualReviews.isEmpty()) {
+    private Mono<String> synthesizeReviews(List<FileReview> fileReviews, int missingCount, int maxTokens, PrContext prContext) {
+        if (fileReviews.isEmpty()) {
             return Mono.just("All files exceed the %d-token limit".formatted(maxTokens));
         }
 
-        String combinedReviews = String.join("\n\n--- Next Review ---\n\n", individualReviews);
+        String combinedReviews = fileReviews.stream()
+                .map(FileReview::toContextualReview)
+                .collect(Collectors.joining("\n\n--- Next Review ---\n\n"));
 
         return isWithinTokenLimit(combinedReviews, maxTokens)
                 .flatMap(withinLimit -> {
