@@ -7,12 +7,14 @@ import com.code.review.application.port.outbound.EventPublisher;
 import com.code.review.infrastructure.config.KafkaTopicProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Slf4j
 @Component
+@ConditionalOnBean(KafkaTemplate.class)
 @RequiredArgsConstructor
 public class KafkaEventPublisher implements EventPublisher {
 

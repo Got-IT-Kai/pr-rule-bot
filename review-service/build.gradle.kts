@@ -61,6 +61,24 @@ testing {
         val test by getting(JvmTestSuite::class) {
             useJUnitJupiter()
         }
+
+        val evalTest by registering(JvmTestSuite::class) {
+            useJUnitJupiter()
+
+            dependencies {
+                implementation(project(":review-service"))
+                implementation("org.springframework.boot:spring-boot-starter-test")
+                implementation("io.projectreactor:reactor-test")
+            }
+
+            targets {
+                all {
+                    testTask.configure {
+                        shouldRunAfter(test)
+                    }
+                }
+            }
+        }
     }
 }
 

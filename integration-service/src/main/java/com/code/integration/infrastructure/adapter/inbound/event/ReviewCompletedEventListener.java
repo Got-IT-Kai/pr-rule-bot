@@ -10,6 +10,7 @@ import com.code.integration.infrastructure.config.KafkaTopicProperties;
 import com.code.integration.infrastructure.support.ReactiveRetrySupport;
 import com.code.platform.dlt.DltPublisher;
 import com.code.platform.idempotency.IdempotencyStore;
+import com.code.platform.kafka.ConditionalOnKafkaEnabled;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -24,6 +25,7 @@ import java.util.UUID;
 
 @Slf4j
 @Component
+@ConditionalOnKafkaEnabled
 @RequiredArgsConstructor
 public class ReviewCompletedEventListener {
 

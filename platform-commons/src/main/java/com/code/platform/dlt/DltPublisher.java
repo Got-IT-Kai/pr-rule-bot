@@ -4,6 +4,7 @@ import com.code.platform.idempotency.IdempotencyStore;
 import com.code.platform.metrics.MetricsHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
@@ -13,6 +14,7 @@ import java.time.Duration;
 
 @Slf4j
 @Component
+@ConditionalOnBean(KafkaTemplate.class)
 @RequiredArgsConstructor
 public class DltPublisher {
 
