@@ -13,3 +13,4 @@ Concise records of non-obvious decisions with trade-offs. Keep them short; code 
 - [ADR-0021](0021-diff-validation-and-skip-strategy.md): Diff validation and skip to save AI cycles
 - [ADR-0022](0022-event-schema-format.md): JSON Schema now; Avro + registry deferred
 - [ADR-0023](0023-gke-self-review.md): GKE Autopilot for always-on self-review
+- [ADR-0024](0024-conditional-kafka-meta-annotation.md): Conditional beans for optional Kafka

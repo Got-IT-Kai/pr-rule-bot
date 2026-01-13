@@ -5,6 +5,7 @@ import com.code.context.infrastructure.config.KafkaTopicProperties;
 import com.code.events.webhook.PullRequestReceivedEvent;
 import com.code.platform.dlt.DltPublisher;
 import com.code.platform.idempotency.IdempotencyStore;
+import com.code.platform.kafka.ConditionalOnKafkaEnabled;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.slf4j.MDC;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
+@ConditionalOnKafkaEnabled
 @RequiredArgsConstructor
 public class PullRequestEventListener {
 
