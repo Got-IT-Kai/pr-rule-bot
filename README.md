@@ -1,4 +1,4 @@
-# PR Rule Bot
+# AI PR Review Bot
 
 [![CI & PR Analysis](https://github.com/Got-IT-Kai/pr-rule-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/Got-IT-Kai/pr-rule-bot/actions/workflows/ci.yml)
 [![Sonar Quality Gate](https://sonarcloud.io/api/project_badges/measure?project=Got-IT-Kai_pr-rule-bot&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=Got-IT-Kai_pr-rule-bot)
@@ -7,28 +7,26 @@
 ![Gradle](https://img.shields.io/badge/Gradle-8.5-blue)
 [![License](https://img.shields.io/badge/license-Apache%202.0-green)](LICENSE)
 
-Asynchronous GitHub PR reviewer that survives webhook timeouts and keeps the first review loop fast.
-
-A lightweight webhook service accepts PR events, hands them to Kafka, and downstream services fetch diffs, run AI review, and post comments back to GitHub.
+Asynchronous GitHub PR reviewer that acknowledges webhook deliveries quickly and runs diff collection, AI review, and comment posting out-of-band via Kafka.
 
 ---
 
 ## Why it’s structured this way
 
-### **Webhook timeout**
-- GitHub webhooks must respond in ~10s. `webhook-service` validates the request, enqueues an event, and returns immediately so it never blocks on AI or GitHub API latency.
+### **Webhook response window**
+- GitHub webhook receivers should return a 2xx response within 10 seconds, so the webhook service validates the request, publishes an event, and returns immediately.
 
 ### **Heavy review pipeline**
-- Fetching diffs, calling an LLM, and formatting comments is CPU/IO-heavy.
+- Fetching diffs, calling an LLM, and formatting comments are CPU/IO-heavy.
 - `context-service` focuses on GitHub API + diff validation,
 - `review-service` focuses on AI orchestration,
 - `integration-service` focuses on writing results back to GitHub.
 
-### **Stateless by design**
-- GitHub is the source of truth. The system doesn’t keep its own database or history; it just reacts to events and posts reviews.
+### **No application database**
+- GitHub remains the source of truth, and the system avoids keeping its own long-lived review history.
 
-### **Policy as an extension point**
-- `policy-service` is a stub for future rule engines (org-wide policies, style rules, security checks) without mixing that logic into the AI path.
+### **Failure isolation**
+- GitHub does not automatically redeliver failed webhook deliveries, so failed downstream work is routed to DLT and can be replayed manually.
 
 ---
 
@@ -44,9 +42,6 @@ A lightweight webhook service accepts PR events, hands them to Kafka, and downst
 - Fetch PR diff and file metadata
 - Apply basic diff validation (skip binary/permission-only/no-hunk)
 - Emit `context.collected` with status (COMPLETED/SKIPPED/FAILED)
-
-### **`policy-service`**
-- Placeholder for future policy checks (no active producers/consumers yet)
 
 ### **`review-service`**
 - Split diff by file and respect token limits
@@ -84,3 +79,8 @@ docker-compose up -d              # start Kafka + observability stack
 ./gradlew build                   # build all modules
 ./gradlew :webhook-service:bootRun   # run a single service
 ```
+
+---
+
+## Planned extensions
+- **policy-service** — org-wide policies, style rules, and security checks
